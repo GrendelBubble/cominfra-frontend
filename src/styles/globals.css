@@ -5,6 +5,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --header-height: max(33vh, 10rem); /* Définition de la hauteur du header */
+  --footer-height: 3rem; /* Définition de la hauteur du footer */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,7 +17,43 @@
 }
 
 body {
+  @apply flex flex-col w-full;
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0; /* Supprimer les marges par défaut */
+  padding: 0; /* Supprimer les espacements par défaut */
+}
+
+.wrapper {
+  @apply flex flex-col min-h-screen w-full;
+}
+
+.header {
+  @apply bg-transparent text-white w-full flex justify-center items-center relative;
+  height: var(--header-height); /* Utilisation de la variable pour la hauteur du header */
+  position: fixed; /* Fixer le header en haut de la page */
+  top: 0; /* Positionner le header en haut */
+  left: 0; /* Positionner le header à gauche */
+  right: 0; /* Étendre le header jusqu'à droite */
+  z-index: 10; /* S'assurer que le header est au-dessus des autres éléments */
+}
+
+.header-title {
+  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+}
+
+.header-icons {
+  @apply absolute top-0 right-0 p-4 flex items-center;
+}
+
+.main {
+  @apply flex flex-col items-center p-4 w-full;
+  margin-top: var(--header-height); /* Ajouter une marge supérieure égale à la hauteur du header */
+  flex: 1; /* Pour s'assurer que le contenu principal occupe tout l'espace disponible */
+}
+
+.footer {
+  @apply bg-gray-800 text-white w-full p-4 flex justify-center mt-auto;
+  height: var(--footer-height); /* Utilisation de la variable pour la hauteur du footer */
 }

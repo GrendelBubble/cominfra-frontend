@@ -1,101 +1,88 @@
-import Image from "next/image";
+import React, { useEffect, useState } from 'react';
+import { FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import { useRouter } from 'next/router';
 
-export default function Home() {
+const Home: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [refresh, setRefresh] = useState<boolean>(false); // État pour forcer la mise à jour
+  const router = useRouter();
+  const backgroundImage = "/accueil.jpg"; // Nom de l'image de fond
+
+  const checkLoginStatus = () => {
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+    setRefresh((prev) => !prev); // Forcer le rafraîchissement visuel
+    console.log('Token:', token); // Débogage: affiche le token dans la console
+    console.log('IsLoggedIn:', !!token); // Débogage: affiche l'état de connexion dans la console
+  };
+
+  useEffect(() => {
+    // Vérifie l'état de connexion lors du chargement de la page
+    checkLoginStatus();
+
+    // Vérifie l'état de connexion à chaque changement de route
+    const handleRouteChange = () => {
+      checkLoginStatus();
+    };
+
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
+
+  const handleIconClick = () => {
+    if (isLoggedIn) {
+      localStorage.removeItem('token');
+      setIsLoggedIn(false);
+      router.push('/logout');
+    } else {
+      router.push('/login');
+    }
+    setRefresh((prev) => !prev); // Forcer la mise à jour
+  };
+
+  console.log('Component render - isLoggedIn:', isLoggedIn); // Débogage: vérifier le rendu du composant et l'état
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="wrapper">
+      <header 
+        className="header home-header"
+        style={{ 
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'auto 100%', // S'assurer que l'image occupe toute la hauteur du header
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'left top', // Aligner l'image à gauche et en haut
+          height: 'var(--header-height)' // Utilisation de la variable pour la hauteur du header
+        }}
+      >
+        <h1 className="header-title text-3xl font-bold">Bienvenue sur Notre Site</h1>
+        <div className="header-icons">
+          <button onClick={handleIconClick} className="text-white hover:text-gray-300 flex items-center">
+            {isLoggedIn ? (
+              <FaSignOutAlt size={24} />
+            ) : (
+              <FaUserCircle size={24} />
+            )}
+          </button>
         </div>
+      </header>
+      <main className="main">
+        <section className="bg-white shadow-md rounded-lg p-6 mb-4 w-full md:w-1/2 lg:w-1/3">
+          <h2 className="text-2xl font-semibold mb-2">Nos Services</h2>
+          <p className="text-gray-700">Découvrez nos services exceptionnels et comment ils peuvent vous aider à atteindre vos objectifs.</p>
+        </section>
+        <section className="bg-white shadow-md rounded-lg p-6 mb-4 w-full md:w-1/2 lg:w-1/3">
+          <h2 className="text-2xl font-semibold mb-2">Contactez-Nous</h2>
+          <p className="text-gray-700">Vous avez des questions ou besoin de plus d'informations ? N'hésitez pas à nous contacter !</p>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      <footer className="footer">
+        <p>&copy; 2024 Votre Compagnie. Tous droits réservés.</p>
       </footer>
     </div>
   );
-}
+};
+
+export default Home;
