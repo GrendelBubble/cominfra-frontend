@@ -1,26 +1,55 @@
 import React, { useEffect, useState } from 'react';
 import { FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
 import { useRouter } from 'next/router';
+import Cookies from 'js-cookie'; // Importer js-cookie pour gérer les cookies
+import client from '../lib/apollo-client';
+import { gql } from '@apollo/client';
+
+const VIEWER_QUERY = gql`
+  query Viewer {
+    viewer {
+      id
+      name
+      email
+    }
+  }
+`;
 
 const Home: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [refresh, setRefresh] = useState<boolean>(false); // État pour forcer la mise à jour
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();
   const backgroundImage = "/accueil.jpg"; // Nom de l'image de fond
 
-  const checkLoginStatus = () => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-    setRefresh((prev) => !prev); // Forcer le rafraîchissement visuel
-    console.log('Token:', token); // Débogage: affiche le token dans la console
-    console.log('IsLoggedIn:', !!token); // Débogage: affiche l'état de connexion dans la console
+  const checkLoginStatus = async () => {
+    const token = Cookies.get('token');
+    //console.log('Token:', token); // Débogage: affiche le token dans la console
+    if (token) {
+      try {
+        const response = await client.query({
+          query: VIEWER_QUERY,
+          context: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        });
+        const user = response.data.viewer;
+        //console.log('User Data:', user); // Débogage: affiche les données utilisateur dans la console
+        setCurrentUser(user);
+        setIsLoggedIn(true); // Définit l'état de connexion à vrai
+      } catch (err) {
+        //console.error('Error fetching viewer data:', err);
+        setIsLoggedIn(false); // Définit l'état de connexion à faux en cas d'erreur
+      }
+    } else {
+      setIsLoggedIn(false); // Définit l'état de connexion à faux si pas de token
+    }
   };
 
   useEffect(() => {
-    // Vérifie l'état de connexion lors du chargement de la page
     checkLoginStatus();
 
-    // Vérifie l'état de connexion à chaque changement de route
     const handleRouteChange = () => {
       checkLoginStatus();
     };
@@ -34,16 +63,16 @@ const Home: React.FC = () => {
 
   const handleIconClick = () => {
     if (isLoggedIn) {
-      localStorage.removeItem('token');
+      Cookies.remove('token');
       setIsLoggedIn(false);
-      router.push('/logout');
+      setCurrentUser(null);
+      router.push('/login'); // Rediriger vers la page de login après déconnexion
     } else {
       router.push('/login');
     }
-    setRefresh((prev) => !prev); // Forcer la mise à jour
   };
 
-  console.log('Component render - isLoggedIn:', isLoggedIn); // Débogage: vérifier le rendu du composant et l'état
+  //console.log('Component render - isLoggedIn:', isLoggedIn); // Débogage: vérifier le rendu du composant et l'état
 
   return (
     <div className="wrapper">
@@ -69,6 +98,17 @@ const Home: React.FC = () => {
         </div>
       </header>
       <main className="main">
+        {isLoggedIn && currentUser ? (
+          <section className="bg-white shadow-md rounded-lg p-6 mb-4 w-full md:w-1/2 lg:w-1/3">
+            <h2 className="text-2xl font-semibold mb-2">Bonjour, {currentUser.name}</h2>
+            <p className="text-gray-700">Vous êtes connecté.</p>
+          </section>
+        ) : (
+          <section className="bg-white shadow-md rounded-lg p-6 mb-4 w-full md:w-1/2 lg:w-1/3">
+            <h2 className="text-2xl font-semibold mb-2">Bienvenue sur Notre Site</h2>
+            <p className="text-gray-700">Veuillez vous connecter pour accéder à votre compte.</p>
+          </section>
+        )}
         <section className="bg-white shadow-md rounded-lg p-6 mb-4 w-full md:w-1/2 lg:w-1/3">
           <h2 className="text-2xl font-semibold mb-2">Nos Services</h2>
           <p className="text-gray-700">Découvrez nos services exceptionnels et comment ils peuvent vous aider à atteindre vos objectifs.</p>

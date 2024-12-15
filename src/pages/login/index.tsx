@@ -1,9 +1,9 @@
-"use client";
-
 import React, { useState, useEffect, FormEvent } from 'react';
 import { gql, useMutation, ApolloError } from '@apollo/client';
+import { useRouter } from 'next/router';
 import client from '../../lib/apollo-client';
 import ErrorMessage from '../../components/ErrorMessage';
+import Cookies from 'js-cookie';
 
 interface User {
   id: string;
@@ -36,6 +36,7 @@ const LoginPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [apolloError, setApolloError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('username') || '';
@@ -48,7 +49,9 @@ const LoginPage: React.FC = () => {
     client: client,
     onCompleted: (data) => {
       const authToken = data.login.authToken;
+      //console.log('Auth Token:', authToken); // Log le token
       setToken(authToken);
+      Cookies.set('token', authToken); // Stocker le token dans les cookies
 
       // Récupérer les informations de l'utilisateur connecté
       client
@@ -62,12 +65,15 @@ const LoginPage: React.FC = () => {
         })
         .then((response) => {
           const user = response.data.viewer;
+          //console.log('User Data:', user); // Log les données utilisateur
           setCurrentUser(user);
+          router.push('/'); // Rediriger vers la page d'accueil
         })
         .catch((err) => console.error('Error fetching viewer data:', err));
     },
     onError: (error) => {
       setValidationError(null); // Reset validation error
+      //console.error('Apollo Error:', error); // Log l'erreur Apollo
       setApolloError(formatErrorMessage(error));
     }
   });
@@ -87,12 +93,12 @@ const LoginPage: React.FC = () => {
     localStorage.setItem('username', username);
     localStorage.setItem('password', password);
 
+    //console.log('Logging in with:', username, password); // Log les identifiants
     login({ variables: { username, password } });
   };
 
   const formatErrorMessage = (error: ApolloError) => {
     const message = error.message.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
-    // Ajoutez le lien vers la page de mot de passe oublié uniquement si le message contient une erreur de mot de passe
     return message.includes("Mot de passe oublié ?")
       ? `${message}`
       : `${message} <a href="/forgot-password">Mot de passe oublié ?</a>`;
