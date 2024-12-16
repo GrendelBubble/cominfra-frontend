@@ -66,7 +66,7 @@ const Home: React.FC = () => {
       Cookies.remove('token');
       setIsLoggedIn(false);
       setCurrentUser(null);
-      router.push('/login'); // Rediriger vers la page de login après déconnexion
+      router.push('/'); // Rediriger vers la page de login après déconnexion
     } else {
       router.push('/login');
     }
