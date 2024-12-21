@@ -6,31 +6,12 @@
   --background: #ffffff;
   --foreground: #171717;
   --header-height: max(33vh, 10rem); /* Définition de la hauteur du header */
-  --footer-height: 3rem; /* Définition de la hauteur du footer */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  @apply flex flex-col w-full;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  margin: 0; /* Supprimer les marges par défaut */
-  padding: 0; /* Supprimer les espacements par défaut */
-}
-
-.wrapper {
-  @apply flex flex-col min-h-screen w-full;
+  --icon-size: 4rem; /* Taille des icônes */
+  --header-padding: 0.5rem /* Marges du header */
 }
 
 .header {
-  @apply bg-transparent text-white w-full flex justify-center items-center relative;
+  @apply bg-transparent text-white w-full flex flex-col relative;
   height: var(--header-height); /* Utilisation de la variable pour la hauteur du header */
   position: fixed; /* Fixer le header en haut de la page */
   top: 0; /* Positionner le header en haut */
@@ -39,21 +20,19 @@ body {
   z-index: 10; /* S'assurer que le header est au-dessus des autres éléments */
 }
 
-.header-title {
-  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+.header-logo {
+  @apply flex items-center;
+  width: var(--icon-size); /* Définir la taille de l'icône */
+  height: var(--icon-size); /* Définir la taille de l'icône */
+  margin: var(--header-padding); /* Assurer une marge à gauche */
 }
 
 .header-icons {
-  @apply absolute top-0 right-0 p-4 flex items-center;
+  @apply flex items-center;
+  margin-right: var(--icon-margin); /* Marge pour l'icône de connexion */
 }
 
-.main {
-  @apply flex flex-col items-center p-4 w-full;
-  margin-top: var(--header-height); /* Ajouter une marge supérieure égale à la hauteur du header */
-  flex: 1; /* Pour s'assurer que le contenu principal occupe tout l'espace disponible */
-}
-
-.footer {
-  @apply bg-gray-800 text-white w-full p-4 flex justify-center mt-auto;
-  height: var(--footer-height); /* Utilisation de la variable pour la hauteur du footer */
+.menu {
+  @apply list-none flex gap-6 w-full justify-around;
+  margin: 0 var(--icon-margin); /* Assurer une marge à gauche et à droite */
 }

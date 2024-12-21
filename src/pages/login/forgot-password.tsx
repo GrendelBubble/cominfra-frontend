@@ -8,21 +8,16 @@ const ForgotPassword: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-
     // Simuler l'envoi de l'email de réinitialisation de mot de passe
     console.log(`Email de réinitialisation envoyé à : ${email}`);
+    setSubmitted(true);
 
-    // Ajouter une temporisation d'une seconde avant d'afficher le message de confirmation
+    // Rediriger vers la page de connexion après 3 secondes
     setTimeout(() => {
-      setSubmitted(true);
-
-      // Rediriger vers la page de connexion après 3 secondes
-      setTimeout(() => {
-        router.push('/login');
-      }, 3000);
-    }, 1000);
+      router.push('/login');
+    }, 3000);
   };
 
   return (

@@ -13,7 +13,7 @@ interface User {
 
 const LOGIN_MUTATION = gql`
   mutation Login($username: String!, $password: String!) {
-    login(input: {username: $username, password: $password}) {
+    login(input: { username: $username, password: $password }) {
       authToken
     }
   }
@@ -40,68 +40,59 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('username') || '';
-    const savedPassword = localStorage.getItem('password') || '';
     setUsername(savedUsername);
-    setPassword(savedPassword);
   }, []);
 
   const [login, { loading }] = useMutation(LOGIN_MUTATION, {
     client: client,
     onCompleted: (data) => {
       const authToken = data.login.authToken;
-      //console.log('Auth Token:', authToken); // Log le token
       setToken(authToken);
-      Cookies.set('token', authToken); // Stocker le token dans les cookies
+      Cookies.set('token', authToken);
 
-      // Récupérer les informations de l'utilisateur connecté
       client
         .query({
           query: VIEWER_QUERY,
           context: {
             headers: {
-              Authorization: `Bearer ${authToken}`
-            }
-          }
+              Authorization: `Bearer ${authToken}`,
+            },
+          },
         })
         .then((response) => {
           const user = response.data.viewer;
-          //console.log('User Data:', user); // Log les données utilisateur
           setCurrentUser(user);
-          router.push('/'); // Rediriger vers la page d'accueil
+          router.push('/'); // Redirection vers la page d'accueil
         })
         .catch((err) => console.error('Error fetching viewer data:', err));
     },
     onError: (error) => {
-      setValidationError(null); // Reset validation error
-      //console.error('Apollo Error:', error); // Log l'erreur Apollo
+      setValidationError(null);
       setApolloError(formatErrorMessage(error));
-    }
+    },
   });
 
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
-    setValidationError(null); // Reset validation error
-    setApolloError(null); // Reset Apollo error
+    setValidationError(null);
+    setApolloError(null);
 
-    // Vérifier si les champs d'identifiant et de mot de passe sont vides
     if (!username || !password) {
       setValidationError('Les champs d\'identifiant et de mot de passe ne peuvent pas être vides.');
       return;
     }
 
-    // Enregistrer les valeurs dans localStorage
     localStorage.setItem('username', username);
-    localStorage.setItem('password', password);
-
-    //console.log('Logging in with:', username, password); // Log les identifiants
     login({ variables: { username, password } });
   };
 
   const formatErrorMessage = (error: ApolloError) => {
-    const message = error.message.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
-    return message.includes("Mot de passe oublié ?")
-      ? `${message}`
-      : `${message} <a href="/forgot-password">Mot de passe oublié ?</a>`;
+    const message = error.message
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'");
+    return message;
   };
 
   return (
@@ -114,8 +105,7 @@ const LoginPage: React.FC = () => {
               <label className="font-semibold text-sm text-gray-600 pb-1 block">Nom d'utilisateur</label>
               <input
                 type="text"
-                placeholder=""
-                value={username || ''}
+                value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="border rounded-lg px-3 py-2 mt-1 text-sm w-full"
               />
@@ -124,8 +114,7 @@ const LoginPage: React.FC = () => {
               <label className="font-semibold text-sm text-gray-600 pb-1 block">Mot de passe</label>
               <input
                 type="password"
-                placeholder=""
-                value={password || ''}
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="border rounded-lg px-3 py-2 mt-1 text-sm w-full"
               />
@@ -140,18 +129,14 @@ const LoginPage: React.FC = () => {
             {validationError && <ErrorMessage message={validationError} />}
             {apolloError && <ErrorMessage message={apolloError} />}
           </form>
-          {token && currentUser && (
-            <div className="p-5">
-              <h2 className="text-center text-lg font-semibold mb-5">Informations de l'utilisateur connecté</h2>
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                <strong className="font-bold">Succès!</strong>
-                <span className="block sm:inline">Connexion réussie.</span>
-              </div>
-              <p className="text-sm text-gray-700 mt-4">ID : {currentUser.id}</p>
-              <p className="text-sm text-gray-700">Nom : {currentUser.name}</p>
-              <p className="text-sm text-gray-700">Email : {currentUser.email}</p>
-            </div>
-          )}
+          <div className="px-5 py-5 text-center text-sm text-gray-500">
+            <p>
+              Mot de passe oublié ?{' '}
+              <a href="/forgot-password" className="text-blue-500 underline">
+                Cliquez ici
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
