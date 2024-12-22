@@ -46,7 +46,7 @@ const ForgotPassword: React.FC = () => {
             </form>
           ) : (
             <div className="text-center">
-              <p className="text-sm text-gray-700 mt-4">Un email de réinitialisation a été envoyé à {email}. Vous serez redirigé vers la page de connexion sous peu.</p>
+              <p className="text-sm text-gray-700 mt-4">Un email de réinitialisation a été envoyé à {email}. Consultez votre messagerie. Vous serez redirigé vers la page de connexion sous peu.</p>
             </div>
           )}
         </div>

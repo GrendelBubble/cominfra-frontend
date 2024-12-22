@@ -1,33 +1,19 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { gql, useMutation, ApolloError } from '@apollo/client';
+import { useMutation, ApolloError } from '@apollo/client';
 import { useRouter } from 'next/router';
 import client from '../../lib/apollo-client';
 import ErrorMessage from '../../components/ErrorMessage';
 import Cookies from 'js-cookie';
+
+// Import des mutations et requêtes GraphQL
+import { LOGIN_MUTATION } from '../../graphql/mutations/login';
+import { VIEWER_QUERY } from '../../graphql/queries/viewer';
 
 interface User {
   id: string;
   name: string;
   email: string;
 }
-
-const LOGIN_MUTATION = gql`
-  mutation Login($username: String!, $password: String!) {
-    login(input: { username: $username, password: $password }) {
-      authToken
-    }
-  }
-`;
-
-const VIEWER_QUERY = gql`
-  query Viewer {
-    viewer {
-      id
-      name
-      email
-    }
-  }
-`;
 
 const LoginPage: React.FC = () => {
   const [username, setUsername] = useState<string>('');
@@ -36,7 +22,7 @@ const LoginPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [apolloError, setApolloError] = useState<string | null>(null);
-  const router = useRouter();
+  const router = useRouter();  // Initialisation du router pour la redirection
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('username') || '';
@@ -62,7 +48,9 @@ const LoginPage: React.FC = () => {
         .then((response) => {
           const user = response.data.viewer;
           setCurrentUser(user);
-          router.push('/'); // Redirection vers la page d'accueil
+
+          // Redirection vers la page d'accueil après une connexion réussie
+          router.push('/');  // Page d'accueil après la connexion
         })
         .catch((err) => console.error('Error fetching viewer data:', err));
     },
@@ -98,6 +86,30 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center sm:py-12">
       <div className="p-10 xs:p-0 mx-auto md:w-full md:max-w-md">
+        {/* Icône de retour à la page d'accueil */}
+        <div className="absolute top-5 left-5">
+          <button
+            onClick={() => router.push('/')}  // Redirection vers la page d'accueil
+            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+          >
+            {/* Icône de retour en SVG */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="h-6 w-6 text-gray-800"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 12H5M12 5l-7 7 7 7"
+              />
+            </svg>
+          </button>
+        </div>
+        
         <h1 className="font-bold text-center text-2xl mb-5">Connexion</h1>
         <div className="bg-white shadow w-full rounded-lg divide-y divide-gray-200">
           <form onSubmit={handleLogin} className="px-5 py-7">
@@ -132,7 +144,7 @@ const LoginPage: React.FC = () => {
           <div className="px-5 py-5 text-center text-sm text-gray-500">
             <p>
               Mot de passe oublié ?{' '}
-              <a href="/forgot-password" className="text-blue-500 underline">
+              <a href="/login/forgot-password" className="text-blue-500 underline">
                 Cliquez ici
               </a>
             </p>

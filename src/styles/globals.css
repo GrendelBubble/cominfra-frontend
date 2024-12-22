@@ -36,3 +36,9 @@
   @apply list-none flex gap-6 w-full justify-around;
   margin: 0 var(--icon-margin); /* Assurer une marge à gauche et à droite */
 }
+/* Media query pour ajuster les éléments à des tailles d'écran plus petites */
+@media screen and (max-width: 768px) {
+  .menu-item a {
+    @apply text-xs items-center justify-center; /* Réduire la taille de la police des liens du menu */
+  }
+}
