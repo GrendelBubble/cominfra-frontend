@@ -108,6 +108,7 @@ function Home() {
     }
   };
 
+
   return (
 <header className='header'
   style={{ 
@@ -128,7 +129,7 @@ function Home() {
       <div className="flex flex-wrap justify-between items-center mx-auto max-w-screen-lg">
         {/* Menu qui s'affiche en colonne sur mobile et en ligne sur desktop */}
         <div className={`flex-col md:flex md:flex-row items-center w-full md:w-auto md:order-2 transition-all duration-300 
-          ${nav ? "absolute top-14 left-0 w-full shadow-md p-4 bg-gray-800" : "hidden md:flex gap-6"}`}
+          ${nav ? "absolute top-3 right-16 w-[100px] shadow-md p-4 bg-gray-400" : "hidden md:flex gap-6"}`}
         >
           <ul className="menu flex flex-col md:flex-row gap-4 md:gap-6">
             {categories.map((category, index) => (
@@ -148,13 +149,13 @@ function Home() {
 
         {/* Menu hamburger */}
         <div className="md:hidden flex items-center lg:order-1">
-          <button
-            type="button"
-            className="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-            aria-controls="mobile-menu"
-            aria-expanded={nav.toString()}
-            onClick={() => setNav(!nav)} // On inverse l'état du menu ici
-          >
+        <button
+          type="button"
+          className="inline-flex items-center p-2 ml-1 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+          aria-controls="mobile-menu"
+          aria-expanded={nav}  // Utiliser une valeur booléenne
+          onClick={() => setNav(!nav)}
+        >
             <span className="sr-only">Open main menu</span>
             {nav ? (
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
