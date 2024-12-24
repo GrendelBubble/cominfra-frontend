@@ -42,3 +42,10 @@
     @apply text-xs items-center justify-center; /* Réduire la taille de la police des liens du menu */
   }
 }
+
+.main {
+  @apply flex flex-col items-center p-4 w-full;
+  margin-top: var(--header-height); /* Ajouter une marge supérieure égale à la hauteur du header */
+  flex: 1; /* Pour s'assurer que le contenu principal occupe tout l'espace disponible */
+}
+
