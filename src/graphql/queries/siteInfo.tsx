@@ -1,10 +1,11 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const SITE_INFO_QUERY = gql`
-  query MyQuery {
+  query SiteInfo {
     allSettings {
       generalSettingsTitle
       generalSettingsDescription
     }
+    siteIconLink
   }
 `;

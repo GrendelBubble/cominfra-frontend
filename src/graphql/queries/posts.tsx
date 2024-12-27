@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const LIST_POSTS = gql`
-  query GetAllPosts {
-    posts {
+  query GetPostsPerCategories($categoryName:String!, $qtyReturned: Int!) {
+    posts(first:$qtyReturned, where: {categoryName: $categoryName}) {
       nodes {
         author {
           node {

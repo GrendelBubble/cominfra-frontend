@@ -4,7 +4,7 @@ declare module 'js-cookie' {
       path?: string;
       domain?: string;
       secure?: boolean;
-      sameSite?: 'strict' | 'lax' | 'none';
+      sameSite?: 'Strict' | 'Lax' | 'None';
     }
   
     function get(name: string): string | undefined;

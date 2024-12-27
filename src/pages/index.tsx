@@ -1,92 +1,130 @@
-// pages/Home.tsx
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Cookies from 'js-cookie';
-import client from '../lib/apollo-client';
-import { VIEWER_QUERY } from '../graphql/queries/viewer';
-import { SITE_INFO_QUERY } from '../graphql/queries/siteInfo';
-import { LIST_POSTS } from '../graphql/queries/posts';
-import Header from '../components/Header'; // Importer le composant Header
-import PostList from '../components/PostList'; // Importer le composant PostList
+import React, { useState, useEffect } from "react";
+import client from "../lib/apollo-client";
+import { SITE_INFO_QUERY } from "../graphql/queries/siteInfo";
+import { LIST_CATEGORIES } from "../graphql/queries/categories";
+import { LIST_BACKGROUNDIMAGES } from "../graphql/queries/backgroundImages";
+import Header from "../components/Header";
 
+// Fonction pour nettoyer le HTML et récupérer uniquement le texte brut
+function cleanHtml(input: string | null): string {
+  if (!input) return "";
+  const doc = new DOMParser().parseFromString(input, "text/html");
+  const textContent = doc.body.textContent || "";
+  return textContent.replace(/\n/g, " ").trim(); // Remplacer les sauts de ligne par des espaces et supprimer les espaces inutiles
+}
+
+// Fonction d'entrée dans l'application
 function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [siteInfo, setSiteInfo] = useState({ title: '', description: '' });
-  const [posts, setPosts] = useState<any[]>([]);  // État pour stocker les posts
-  const router = useRouter();
+  const [siteInfo, setSiteInfo] = useState({ title: "", description: "", icon: "", });
+  const [categoriesWithImages, setCategoriesWithImages] = useState<
+    { name: string; slug: string; link: string | null; caption: string | null }[]
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fonction pour vérifier le statut de connexion
-  const checkLoginStatus = async () => {
-    const token = Cookies.get('token');
-    if (token) {
-      try {
-        const response = await client.query({
-          query: VIEWER_QUERY,
-          context: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        });
-        const user = response.data.viewer;
-        setCurrentUser(user);
-        setIsLoggedIn(true);
-      } catch (err) {
-        setIsLoggedIn(false);
-      }
-    } else {
-      setIsLoggedIn(false);
-    }
-  };
-
-  // Fonction pour récupérer les informations du site
+  // Récupérer les informations du site
   const fetchSiteInfo = async () => {
     try {
       const response = await client.query({
         query: SITE_INFO_QUERY,
       });
-      const { generalSettingsTitle, generalSettingsDescription } = response.data.allSettings;
-      setSiteInfo({ title: generalSettingsTitle, description: generalSettingsDescription });
-    } catch (err) {
-      console.error('Error fetching site info:', err);
-    }
-  };
-
-  // Fonction pour récupérer les posts
-  const fetchPosts = async () => {
-    try {
-      const response = await client.query({
-        query: LIST_POSTS,
+  
+      const { allSettings, siteIconLink } = response.data;
+  
+      setSiteInfo({
+        title: allSettings.generalSettingsTitle,
+        description: allSettings.generalSettingsDescription,
+        icon: siteIconLink || "", // Utiliser siteIconLink ici
       });
-      setPosts(response.data.posts.nodes);  // Mettre à jour les posts
     } catch (err) {
-      console.error('Error fetching posts:', err);
     }
   };
 
+  // Récupérer les catégories et associer les images pour chaque catégorie
+  const fetchCategoriesWithImages = async () => {
+    setLoading(true);
+    try {
+      // Récupérer les catégories
+      const categoriesResponse = await client.query({
+        query: LIST_CATEGORIES,
+      });
+      const categories = categoriesResponse.data.categories.nodes;
+
+      if (categories.length > 0) {
+        // Extraire tous les names des catégories
+        const categoryNames = categories.map((category: any) => category.name);
+
+        // Extraire tous les slugs des catégories
+        const categorySlugs = categories.map((category: any) => category.slug);
+
+        // Récupérer toutes les images correspondantes aux slugs des catégories
+        const mediaResponse = await client.query({
+          query: LIST_BACKGROUNDIMAGES,
+          variables: { slugs: categorySlugs },  // Passer les slugs des catégories comme variable
+        });
+
+        const mediaItems = mediaResponse.data.mediaItems.nodes;
+
+        // Associer chaque catégorie à son image de fond correspondante
+        const categoriesWithImages = categories.map((category: any) => {
+          // Trouver l'image correspondant au slug de la catégorie
+          const matchingMedia = mediaItems.find(
+            (mediaItem: any) => mediaItem.slug === category.slug
+          );
+
+          return {
+            name: category.name,
+            slug: category.slug,
+            link: matchingMedia ? matchingMedia.link : null,
+            caption: matchingMedia
+              ? cleanHtml(matchingMedia.caption || siteInfo.description)  // Nettoyer la légende
+              : cleanHtml(siteInfo.description), // Utiliser la description du site si aucune image n'est trouvée
+          };
+        });
+
+        setCategoriesWithImages(categoriesWithImages);
+      }
+    } catch (err) {
+      setError("Une erreur s'est produite lors de la récupération des données.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Charger les données au montage
   useEffect(() => {
-    checkLoginStatus();
     fetchSiteInfo();
-    fetchPosts();  // Appel à la fonction pour récupérer les posts
-  }, []);
+    fetchCategoriesWithImages();
+  }, []); // Lancer l'effet au montage du composant
+
+  // Vérifier si les données sont encore en train de se charger
+  if (loading) {
+    return <div>Chargement des données...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   return (
     <div>
-      <Header
-        isLoggedIn={isLoggedIn}
-        setIsLoggedIn={setIsLoggedIn}
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-      />
-
-      {/* Corps de la page */}
-      <main className="main">
-        <div className="container mx-auto">
-          {/* Passer les posts au composant PostList */}
-          <PostList posts={posts} />
-        </div>
-      </main>
+      {/* Afficher le Header uniquement lorsque les catégories sont chargées */}
+      {categoriesWithImages.length > 0 ? (
+        <Header
+          categories={categoriesWithImages}
+          siteTitle={siteInfo.title}
+          siteDescription={siteInfo.description}
+          siteIconLink={siteInfo.icon}
+          isLoggedIn={isLoggedIn}
+          currentUser={currentUser}
+          setIsLoggedIn={setIsLoggedIn} // Ajout de setIsLoggedIn
+          setCurrentUser={setCurrentUser} // Ajout de setCurrentUser
+                />
+      ) : (
+        <div>Aucune catégorie disponible</div> // Message si aucune catégorie n'est trouvée
+      )}
     </div>
   );
 }

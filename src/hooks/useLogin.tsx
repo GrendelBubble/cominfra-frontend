@@ -16,7 +16,7 @@ export const useLogin = (username: string, password: string) => {
     onCompleted: (data) => {
       const authToken = data.login.authToken;
       setToken(authToken);
-      Cookies.set('token', authToken);
+      Cookies.set('token', authToken,{ sameSite: "None" });
 
       client
         .query({

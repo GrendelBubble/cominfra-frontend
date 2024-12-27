@@ -7,6 +7,7 @@ export const LIST_CATEGORIES = gql`
     ) {
       nodes {
         name
+        slug
       }
     }
   }
