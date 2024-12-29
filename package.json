@@ -6,13 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "export": "next build && next export"
   },
   "dependencies": {
     "@apollo/client": "^3.12.4",
     "graphql": "^16.10.0",
     "html-react-parser": "^5.2.0",
     "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
     "mini-css-extract-plugin": "^2.9.2",
     "next": "^15.1.2",
     "react": "^19.0.0",
@@ -37,6 +39,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/json-schema": "^7.0.15",
     "@types/json5": "^0.0.30",
+    "@types/jwt-decode": "^2.2.1",
     "@types/mime": "^3.0.4",
     "@types/next": "^8.0.7",
     "@types/node": "^20.17.10",

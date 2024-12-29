@@ -29,5 +29,6 @@ const CategoriesList: React.FC<CategoriesProps> = React.memo(({ categories, onCa
     </ul>
   );
 });
+CategoriesList.displayName = 'CategoriesList';
 
 export default CategoriesList;

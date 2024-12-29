@@ -15,7 +15,7 @@ const VIEWER_QUERY = gql`
 
 export const useAuth = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<string>('');
 
   const checkLoginStatus = async () => {
     const token = Cookies.get('token');

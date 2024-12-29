@@ -5,6 +5,9 @@ import client from '../../lib/apollo-client';
 import ErrorMessage from '../../components/ErrorMessage';
 import Cookies from 'js-cookie';
 
+// Importation correcte de jwt-decode selon la version de la bibliothèque
+import jwt_decode from 'jwt-decode'; // Ou import { jwt_decode } from 'jwt-decode'; si nécessaire
+
 // Import des mutations et requêtes GraphQL
 import { LOGIN_MUTATION } from '../../graphql/mutations/login';
 import { VIEWER_QUERY } from '../../graphql/queries/viewer';
@@ -24,9 +27,45 @@ const LoginPage: React.FC = () => {
   const [apolloError, setApolloError] = useState<string | null>(null);
   const router = useRouter();  // Initialisation du router pour la redirection
 
+  // Décoder le token JWT
+  const decodeJWT = (token: string) => {
+    try {
+      const decoded = jwt_decode(token);  // Décodage du token
+      return decoded;
+    } catch (error) {
+      console.error('Erreur lors du décodage du token:', error);
+      return null;
+    }
+  };
+
+  // Vérifier l'état de la connexion et décoder le token
+  const checkLoginStatus = () => {
+    const storedToken = Cookies.get('token');
+    if (storedToken) {
+      const decoded = decodeJWT(storedToken);
+      if (decoded) {
+        console.log('Token décodé:', decoded);
+        // Si le token est valide, récupérer les informations utilisateur
+        client
+          .query({
+            query: VIEWER_QUERY,
+            context: {
+              headers: {
+                Authorization: `Bearer ${storedToken}`,
+              },
+            },
+          })
+          .then((response) => {
+            const user = response.data.viewer;
+            setCurrentUser(user);
+          })
+          .catch((err) => console.error('Erreur lors de la récupération des données de l\'utilisateur:', err));
+      }
+    }
+  };
+
   useEffect(() => {
-    const savedUsername = localStorage.getItem('username') || '';
-    setUsername(savedUsername);
+    checkLoginStatus();  // Vérification de l'état de connexion au chargement
   }, []);
 
   const [login, { loading }] = useMutation(LOGIN_MUTATION, {
@@ -34,25 +73,31 @@ const LoginPage: React.FC = () => {
     onCompleted: (data) => {
       const authToken = data.login.authToken;
       setToken(authToken);
-      Cookies.set('token', authToken);
+      Cookies.set('token', authToken, {
+        expires: 7,
+        secure: process.env.NODE_ENV === 'production',  // Utiliser secure en production seulement
+        sameSite: 'None',  // Assure-toi que SameSite est correctement défini
+      });
 
-      client
-        .query({
-          query: VIEWER_QUERY,
-          context: {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
+      const decoded = decodeJWT(authToken);
+      if (decoded) {
+        console.log('Token décodé après connexion:', decoded);
+        client
+          .query({
+            query: VIEWER_QUERY,
+            context: {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
             },
-          },
-        })
-        .then((response) => {
-          const user = response.data.viewer;
-          setCurrentUser(user);
-
-          // Redirection vers la page d'accueil après une connexion réussie
-          router.push('/');  // Page d'accueil après la connexion
-        })
-        .catch((err) => console.error('Error fetching viewer data:', err));
+          })
+          .then((response) => {
+            const user = response.data.viewer;
+            setCurrentUser(user);
+            router.push('/');  // Redirection vers la page d'accueil après la connexion réussie
+          })
+          .catch((err) => console.error('Error fetching viewer data:', err));
+      }
     },
     onError: (error) => {
       setValidationError(null);
@@ -144,13 +189,13 @@ const LoginPage: React.FC = () => {
           <div className="px-5 py-5 text-center text-sm text-gray-500">
             <p>
               Mot de passe oublié ?{' '}
-              <a href="/login/forgot-password" className="text-blue-500 underline">
-                Cliquez ici
+              <a href="/forgot-password" className="text-blue-500 hover:text-blue-600 font-semibold">
+                Réinitialiser
               </a>
             </p>
           </div>
         </div>
-      </div>  
+      </div>
     </div>
   );
 };
