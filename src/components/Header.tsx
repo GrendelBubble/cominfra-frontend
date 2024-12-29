@@ -3,7 +3,7 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/router";
 import client from "../lib/apollo-client";
 import { VIEWER_QUERY } from "../graphql/queries/viewer";
-import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
+import { FaUserCircle, FaSignOutAlt, FaBars } from "react-icons/fa";
 
 interface Category {
   name: string;
@@ -21,7 +21,7 @@ interface HeaderProps {
   currentUser: string;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
   setCurrentUser: React.Dispatch<React.SetStateAction<any>>;
-  onLogout: () => void; // Ajout du paramètre onLogout
+  onLogout: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -35,8 +35,8 @@ const Header: React.FC<HeaderProps> = ({
   setCurrentUser,
   onLogout,
 }) => {
-  const [nav, setNav] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null); // Pour suivre les erreurs d'authentification
+  const [nav, setNav] = useState(false); // Etat pour le menu mobile
+  const [authError, setAuthError] = useState<string | null>(null); // Pour l'authentification
   const router = useRouter();
 
   const checkLoginStatus = async () => {
@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({
 
       setCurrentUser(response.data.viewer);
       setIsLoggedIn(true);
-      setAuthError(null); // Aucune erreur
+      setAuthError(null);
     } catch (err) {
       setIsLoggedIn(false);
       setCurrentUser(null);
@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({
     Cookies.remove("token");
     setIsLoggedIn(false);
     setCurrentUser(null);
-    onLogout(); // Appel de la fonction onLogout passée en paramètre
+    onLogout();
     router.push("/"); // Redirection après déconnexion
   };
 
@@ -86,66 +86,65 @@ const Header: React.FC<HeaderProps> = ({
 
     const handleResize = () => {
       if (window.innerWidth > 768) {
-        setNav(false);
+        setNav(false); // Ferme le menu quand la largeur est supérieure à 768px
       }
     };
 
     window.addEventListener("resize", handleResize);
+    if (window.innerWidth > 768) {
+      setNav(false);
+    }
+
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
-    <div
-      className="header bg-cover bg-no-repeat bg-left-top"
+    <header
+      className="header bg-cover bg-no-repeat bg-left-top relative flex items-center justify-center header-padding"
       style={{
         backgroundImage: categories[0]?.link ? `url(${categories[0].link})` : "none",
         height: "var(--header-height)",
       }}
     >
-      <div className="header-content-container">
+      {/* Logo en haut à gauche */}
+      <div className="absolute top-1 left-1">
         {siteIconLink ? (
           <img className="header-logo" src={siteIconLink} alt="Site Icon" />
         ) : (
           <div className="header-logo-placeholder">No Icon</div>
         )}
-
-        <div className="header-content">
-          <div className="header-site">{siteTitle}</div>
-          <div className="header-slogan">
-            {categories[0]?.caption || siteDescription}
-          </div>
-        </div>
       </div>
 
-      <nav className="absolute top-0 right-0 px-4 lg:px-6 py-2.5 text-white bg-gray-800">
-        <div className="flex justify-between items-center max-w-screen-lg mx-auto">
-          {/* Mobile Menu */}
-          <div className="md:hidden">
-            <button
-              type="button"
-              aria-expanded={nav}
-              className="p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400"
-              onClick={toggleNav}
-            >
-              {nav ? (
-                <FaSignOutAlt size={24} />
-              ) : (
-                <FaUserCircle size={24} />
-              )}
-            </button>
-          </div>
+      {/* Conteneur du titre et du slogan centré */}
+      <div className="header-content text-center">
+        <div className="header-site text-2xl text-white">{siteTitle}</div>
+        <div className="header-slogan text-lg text-white">{categories[0]?.caption || siteDescription}</div>
+      </div>
 
-          {/* Desktop Menu */}
-          <ul
-            className={`menu flex-col md:flex md:flex-row gap-4 md:gap-6 ${
-              nav ? "block" : "hidden md:flex"
-            }`}
+      {/* Menu de navigation en bas à droite */}
+      <div className="absolute bottom-4 right-4 w-auto z-20">
+        {/* Menu Hamburger pour mobile */}
+        <div className="md:hidden">
+          <button
+            type="button"
+            aria-expanded={nav ? "true" : "false"}
+            onClick={toggleNav}
+            className={`p-2 text-sm rounded-lg ${nav ? 'bg-gray-600/70' : 'bg-transparent'} hover:bg-gray-600/30 transition-colors duration-300`}
           >
+            <FaBars size={24} />
+          </button>
+        </div>
+
+        {/* Menu mobile déroulé (visible uniquement sur mobile) */}
+        <div
+          className={`md:hidden transition-all duration-300 ${nav ? "block bg-gray-600 mt-2 absolute top-full right-0 w-max" : "hidden"}`}
+        >
+          <ul className="flex flex-col gap-4 p-4">
             {categories.map((category, index) => (
-              <li key={index} className="menu-item">
+              <li key={index}>
                 <a
                   href={`#${category.slug}`}
-                  className="text-lg text-white hover:underline"
+                  className="text-lg text-white"
                 >
                   {category.name}
                 </a>
@@ -164,15 +163,42 @@ const Header: React.FC<HeaderProps> = ({
             </li>
           </ul>
         </div>
-      </nav>
 
-      {/* Affichage d'une éventuelle erreur */}
+        {/* Menu Desktop (visible uniquement sur les grands écrans) */}
+        <nav className="hidden md:flex justify-center items-center gap-6 text-white">
+          <ul className="flex gap-6">
+            {categories.map((category, index) => (
+              <li key={index}>
+                <a
+                  href={`#${category.slug}`}
+                  className="text-lg hover:underline"
+                >
+                  {category.name}
+                </a>
+              </li>
+            ))}
+            <li>
+              {isLoggedIn ? (
+                <button onClick={handleLogout} className="header-icons">
+                  <FaSignOutAlt size={24} />
+                </button>
+              ) : (
+                <button onClick={handleLoginRedirect} className="header-icons">
+                  <FaUserCircle size={24} />
+                </button>
+              )}
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* Afficher l'erreur d'authentification */}
       {authError && (
         <div className="error-message bg-red-500 text-white p-2 text-center">
           {authError}
         </div>
       )}
-    </div>
+    </header>
   );
 };
 

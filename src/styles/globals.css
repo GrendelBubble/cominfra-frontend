@@ -7,7 +7,7 @@
   --foreground: #171717;
   --header-height: max(33vh, 12rem); /* Définition de la hauteur du header */
   --icon-size: 4rem; /* Taille des icônes */
-  --header-padding: 0.5rem /* Marges du header */
+  --header-padding: 0rem /* Marges du header */
 }
 
 .header {
