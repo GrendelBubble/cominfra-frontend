@@ -33,7 +33,7 @@
 }
 
 .header-content {
-  @apply flex flex-col items-center justify-center;
+  @apply flex flex-col justify-center;
   flex: 1; /* Assurer que le contenu occupe tout l'espace disponible */
   padding: 0 var(--header-padding); /* Ajouter du padding horizontal */
   white-space: nowrap; /* Empêcher le passage à la ligne */

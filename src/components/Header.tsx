@@ -122,7 +122,7 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Menu de navigation en haut à droite */}
-      <div className="absolute top-1 right-1 w-auto z-20">
+      <div className="absolute top-4 right-4 w-auto z-20">
         {/* Menu Hamburger pour mobile */}
         <div className="md:hidden">
           <button

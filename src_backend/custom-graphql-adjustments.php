@@ -1,0 +1,1 @@
+/home/user/htdocs/srv653062.hstgr.cloud/wp-content/plugins/custom-graphql-adjustments/custom-graphql-adjustments.php
