@@ -76,7 +76,7 @@ const LoginPage: React.FC = () => {
       Cookies.set('token', authToken, {
         expires: 7,
         secure: process.env.NODE_ENV === 'production',  // Utiliser secure en production seulement
-        sameSite: 'None',  // Assure-toi que SameSite est correctement défini
+        sameSite: 'Lax',  // Assure-toi que SameSite est correctement défini
       });
 
       const decoded = decodeJWT(authToken);
