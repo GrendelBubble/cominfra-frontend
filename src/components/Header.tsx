@@ -5,26 +5,22 @@ import client from "../lib/apollo-client";
 import { VIEWER_QUERY } from "../graphql/queries/viewer";
 import { FaUserCircle, FaSignOutAlt, FaBars } from "react-icons/fa";
 
-interface Category {
-  name: string;
-  slug: string;
-  link: string | null;
-  caption: string | null;
-}
 
 interface HeaderProps {
-  categories: Category[];
+  categories: any[];
   siteTitle: string;
   siteDescription: string;
   siteIconLink: string;
   isLoggedIn: boolean;
-  currentUser: string;
+  currentUser: any;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
   setCurrentUser: React.Dispatch<React.SetStateAction<any>>;
   onLogout: () => void;
+  onCategoryClick: (slug: string) => void;
+  backgroundImage: string | null;
 }
 
-const Header: React.FC<HeaderProps> = ({
+export const Header: React.FC<HeaderProps> = ({
   categories,
   siteTitle,
   siteDescription,
@@ -34,6 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   setIsLoggedIn,
   setCurrentUser,
   onLogout,
+  onCategoryClick,
+  backgroundImage,
 }) => {
   const [nav, setNav] = useState(false); // Etat pour le menu mobile
   const [authError, setAuthError] = useState<string | null>(null); // Pour l'authentification
@@ -98,12 +96,13 @@ const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // État pour gérer l'ouverture du menu
+
   return (
     <header
-      className="header bg-cover bg-no-repeat bg-left-top relative flex items-center justify-center header-padding"
+      className="header"
       style={{
-        backgroundImage: categories[0]?.link ? `url(${categories[0].link})` : "none",
-        height: "var(--header-height)",
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
       }}
     >
       {/* Logo en haut à gauche */}
@@ -115,41 +114,38 @@ const Header: React.FC<HeaderProps> = ({
         )}
       </div>
 
-      {/* Conteneur du titre et du slogan centré */}
-      <div className="header-content text-center">
-        <div className="header-site text-2xl text-white">{siteTitle}</div>
-        <div className="header-slogan text-lg text-white">{categories[0]?.caption || siteDescription}</div>
+      {/* Contenu centré pour les titres */}
+      <div className="header-content">
+        <div className="header-site">{siteTitle}</div>
+        <div className="header-slogan">{siteDescription}</div>
       </div>
 
-      {/* Menu de navigation en haut à droite */}
-      <div className="absolute top-4 right-4 w-auto z-20">
-        {/* Menu Hamburger pour mobile */}
-        <div className="md:hidden">
-          <button
-            type="button"
-            aria-expanded={nav ? "true" : "false"}
-            onClick={toggleNav}
-            className={`p-2 text-sm rounded-lg ${nav ? 'bg-gray-600/70' : 'bg-transparent'} hover:bg-gray-600/30 transition-colors duration-300`}
-          >
-            <FaBars size={24} />
-          </button>
-        </div>
-
-        {/* Menu mobile déroulé (visible uniquement sur mobile) */}
-        <div
-          className={`md:hidden transition-all duration-300 ${nav ? "block bg-gray-600 mt-2 absolute top-full right-0 w-max" : "hidden"}`}
+      {/* Conteneur pour les menus (aligné en haut à droite) */}
+      <div className="menu">
+        {/* Menu Hamburger pour les petits écrans */}
+        <button
+          className="hamburger-menu"
+          onClick={() => setIsMenuOpen(!isMenuOpen)} // Inverser l'état du menu
         >
-          <ul className="flex flex-col gap-4 p-4">
-            {categories.map((category, index) => (
-              <li key={index}>
-                <a
-                  href={`#${category.slug}`}
-                  className="text-lg text-white"
-                >
-                  {category.name}
-                </a>
-              </li>
-            ))}
+          {isMenuOpen ? "X" : "☰"} {/* Affiche un "X" ou un hamburger en fonction de l'état */}
+        </button>
+        {/* Menu Mobile (visible seulement si isMenuOpen est true) */}
+        {isMenuOpen && (
+          <nav className="mobile-menu">
+            <ul className="flex flex-col gap-6">
+              {categories.map((category) => (
+                <li key={category.slug}>
+                  <button
+                    onClick={() => {
+                      onCategoryClick(category.slug);
+                      setIsMenuOpen(false); // Ferme le menu après avoir sélectionné une catégorie
+                    }}
+                    className="text-lg hover:underline"
+                  >
+                    {category.name}
+                  </button>
+                </li>
+              ))}
             <li>
               {isLoggedIn ? (
                 <button onClick={handleLogout} className="header-icons">
@@ -161,20 +157,20 @@ const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </li>
-          </ul>
-        </div>
-
-        {/* Menu Desktop (visible uniquement sur les grands écrans) */}
-        <nav className="hidden md:flex justify-center items-center gap-6 text-white">
+            </ul>
+          </nav>
+        )}        
+        {/* Menu Desktop (visible sur les grands écrans) */}
+        <nav className="desktop-menu">
           <ul className="flex gap-6">
-            {categories.map((category, index) => (
-              <li key={index}>
-                <a
-                  href={`#${category.slug}`}
+            {categories.map((category) => (
+              <li key={category.slug}>
+                <button
+                  onClick={() => onCategoryClick(category.slug)}
                   className="text-lg hover:underline"
                 >
                   {category.name}
-                </a>
+                </button>
               </li>
             ))}
             <li>
@@ -191,15 +187,6 @@ const Header: React.FC<HeaderProps> = ({
           </ul>
         </nav>
       </div>
-
-      {/* Afficher l'erreur d'authentification */}
-      {authError && (
-        <div className="error-message bg-red-500 text-white p-2 text-center">
-          {authError}
-        </div>
-      )}
     </header>
   );
 };
-
-export default Header;

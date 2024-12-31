@@ -11,7 +11,7 @@
 }
 
 .header {
-  @apply bg-transparent text-white w-full flex flex-col relative;
+  @apply flex flex-col bg-cover bg-no-repeat bg-transparent text-white w-full relative;
   height: var(--header-height); /* Utilisation de la variable pour la hauteur du header */
   position: fixed; /* Fixer le header en haut de la page */
   top: 0; /* Positionner le header en haut */
@@ -20,50 +20,72 @@
   z-index: 10; /* S'assurer que le header est au-dessus des autres éléments */
 }
 
-.header-logo {
+.header-icons {
+  @apply flex items-center;
+  margin-right: var(--icon-margin); /* Marge pour l'icône de connexion */
+}
+
+.main {
+  @apply flex flex-col items-center p-4 w-full;
+  margin-top: var(--header-height); /* Ajouter une marge supérieure égale à la hauteur du header */
+  flex: 1; /* Pour s'assurer que le contenu principal occupe tout l'espace disponible */
+}
+
+.body {
+  @apply flex flex-col items-center w-full;
+  margin-top: var(--header-height); /* Ajouter une marge supérieure égale à la hauteur du header */
+  flex: 1; /* Pour s'assurer que le contenu principal occupe tout l'espace disponible */
+}
+
+.header .header-logo {
   @apply flex items-center;
   width: var(--icon-size); /* Définir la taille de l'icône */
   height: var(--icon-size); /* Définir la taille de l'icône */
   margin: var(--header-padding); /* Assurer une marge à gauche */
 }
 
-.header-icons {
-  @apply flex items-center;
-  margin-right: var(--icon-margin); /* Marge pour l'icône de connexion */
+.header .header-content {
+  @apply flex flex-col justify-center items-center text-center w-full h-full;
 }
 
-.header-content {
-  @apply flex flex-col justify-center;
-  flex: 1; /* Assurer que le contenu occupe tout l'espace disponible */
-  padding: 0 var(--header-padding); /* Ajouter du padding horizontal */
-  white-space: nowrap; /* Empêcher le passage à la ligne */
+.header .header-site {
+  @apply text-4xl font-bold;
 }
 
-.header-site {
-  @apply text-4xl mb-4 justify-center; /* Ajouter un espace entre le titre et le slogan */
+.header .header-slogan {
+  @apply text-3xl font-semibold italic mt-4;
 }
 
-.header-slogan {
-  @apply text-3xl mb-4 justify-center; /* Ajouter un espace entre le titre et le slogan */
-  font-style: italic;
+.header .menu {
+  @apply font-bold absolute top-4 right-4 flex items-center space-x-4;
 }
-.menu {
-  @apply list-none flex gap-6 w-full justify-around;
-  margin: 0 var(--icon-margin); /* Assurer une marge à gauche et à droite */
+
+.header .hamburger-menu {
+  @apply text-white text-2xl justify-end md:hidden;
+}
+
+.header .desktop-menu {
+  @apply hidden md:flex justify-end items-center gap-6 text-white;
+}
+
+.header .mobile-menu {
+  @apply flex md:hidden bg-gray-600 text-white w-auto px-6 py-6 absolute z-10 right-0 mt-1 whitespace-nowrap;
+  top: calc(100%); /* Positionner le menu sous le hamburger */
 }
 
 /* Media query pour ajuster les éléments à des tailles d'écran plus petites */
 @media screen and (max-width: 768px) {
-  .header-site {
+  .header .header-site {
     @apply text-2xl mb-2 justify-center; /* Ajouter un espace entre le titre et le slogan */
   }
   
-  .header-slogan {
+  .header .header-slogan {
     @apply text-xl mb-2 justify-center; /* Ajouter un espace entre le titre et le slogan */
     font-style: italic;
 
   }
-  .header-logo {
+
+  .header .header-logo {
     @apply flex items-center;
     width: calc(var(--icon-size)/1.5); /* Définir la taille de l'icône */
     height: calc(var(--icon-size)/1.5); /* Définir la taille de l'icône */
@@ -74,10 +96,3 @@
     @apply text-xs items-center justify-center; /* Réduire la taille de la police des liens du menu */
   }
 }
-
-.main {
-  @apply flex flex-col items-center p-4 w-full;
-  margin-top: var(--header-height); /* Ajouter une marge supérieure égale à la hauteur du header */
-  flex: 1; /* Pour s'assurer que le contenu principal occupe tout l'espace disponible */
-}
-
