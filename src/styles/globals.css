@@ -7,7 +7,9 @@
   --foreground: #171717;
   --header-height: max(33vh, 12rem); /* Définition de la hauteur du header */
   --icon-size: 4rem; /* Taille des icônes */
-  --header-padding: 0rem /* Marges du header */
+  --icon-margin: 0.5rem; /* Marge des icônes */
+  --header-padding: 0.5rem /* Marges du header */
+  --qty-returned: 12; /* Valeur par défaut si la variable n'est pas définie */
 }
 
 .header {
@@ -45,15 +47,15 @@
 }
 
 .header .header-content {
-  @apply flex flex-col justify-center items-center text-center w-full h-full;
+  @apply flex flex-col justify-center items-center text-center w-full h-full mt-16;
 }
 
 .header .header-site {
   @apply text-4xl font-bold;
 }
 
-.header .header-slogan {
-  @apply text-3xl font-semibold italic mt-4;
+.header .header-caption {
+  @apply text-3xl font-semibold italic mt-8;
 }
 
 .header .menu {
@@ -79,10 +81,9 @@
     @apply text-2xl mb-2 justify-center; /* Ajouter un espace entre le titre et le slogan */
   }
   
-  .header .header-slogan {
-    @apply text-xl mb-2 justify-center; /* Ajouter un espace entre le titre et le slogan */
+  .header .header-caption {
+    @apply text-xl mb-2 justify-center mt-2; /* Ajouter un espace entre le titre et le slogan */
     font-style: italic;
-
   }
 
   .header .header-logo {

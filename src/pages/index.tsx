@@ -18,6 +18,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null); // Image de fond
+  const [backgroundImageCaption, setBackgroundImageCaption] = useState<string | null>(null); // Image de fond
 
   // Fonction pour récupérer les images de fond
   const fetchCategoriesWithImages = async () => {
@@ -63,6 +64,7 @@ function Home() {
         if (firstCategory) {
           setActiveCategory(firstCategory.slug);
           setBackgroundImage(firstCategory.link);
+          setBackgroundImageCaption(firstCategory.caption);
         }
       }
     } catch (err) {
@@ -131,6 +133,7 @@ function Home() {
       // Si une image est trouvée, mettre à jour l'état de l'image de fond
       if (activeCategoryImage && activeCategoryImage.link) {
         setBackgroundImage(activeCategoryImage.link);
+        setBackgroundImageCaption(activeCategoryImage.caption);
         console.log("Nouvelle image de fond :", activeCategoryImage.link); // Juste pour vérifier dans la console
       }
     }
@@ -164,13 +167,12 @@ function Home() {
           siteDescription={siteInfo.description}
           siteIconLink={siteInfo.icon}
           isLoggedIn={isLoggedIn}
-          currentUser={currentUser}
           setIsLoggedIn={setIsLoggedIn}
           setCurrentUser={setCurrentUser}
           onLogout={() => setIsLoggedIn(false)}
           onCategoryClick={handleCategoryClick}
-          backgroundImage={backgroundImage} // Passez l'image de fond ici
-        />
+          backgroundImage={backgroundImage}
+          backgroundImageCaption={backgroundImageCaption} currentUser={undefined}        />
       ) : (
         <div>Aucune catégorie disponible</div>
       )}

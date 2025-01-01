@@ -11,13 +11,11 @@ export const LIST_POSTS = gql`
             customRoles
           }
         }
-        featuredImageDatabaseId
         title
         content
         date
         modified
         slug
-        uri
         status
         link
       }

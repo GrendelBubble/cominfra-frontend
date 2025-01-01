@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
 };
 
 module.exports = {
-  output: 'export',
+  // output: 'export',
   // Vous pouvez également ajouter d'autres configurations spécifiques à votre projet ici
 };
 

@@ -18,6 +18,7 @@ interface HeaderProps {
   onLogout: () => void;
   onCategoryClick: (slug: string) => void;
   backgroundImage: string | null;
+  backgroundImageCaption: string | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,7 +33,14 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onCategoryClick,
   backgroundImage,
+  backgroundImageCaption,
 }) => {
+  const stripHtmlTags = (htmlString: string): string => {
+    return htmlString.replace(/<[^>]*>/g, "");
+  };
+  const headerCaption = backgroundImageCaption ? stripHtmlTags(backgroundImageCaption) : null;
+
+
   const [nav, setNav] = useState(false); // Etat pour le menu mobile
   const [authError, setAuthError] = useState<string | null>(null); // Pour l'authentification
   const router = useRouter();
@@ -103,6 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
       className="header"
       style={{
         backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
+        backgroundPosition: "top right", // Positionner en haut à droite
       }}
     >
       {/* Logo en haut à gauche */}
@@ -117,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Contenu centré pour les titres */}
       <div className="header-content">
         <div className="header-site">{siteTitle}</div>
-        <div className="header-slogan">{siteDescription}</div>
+        <div className="header-caption">{backgroundImageCaption}</div>
       </div>
 
       {/* Conteneur pour les menus (aligné en haut à droite) */}
