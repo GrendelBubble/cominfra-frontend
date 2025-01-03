@@ -68,16 +68,16 @@ export const Body: React.FC<BodyProps> = ({
                         }}
                       />
                       <div className="text-right mt-4">
-                        <Link href={`/post/${post.slug}`} passHref legacyBehavior>
-                          <a
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 font-semibold"
-                          >
-                            Lire la suite
-                          </a>
-                        </Link>
-                      </div>
+<Link href={`/post/${post.slug}`} passHref legacyBehavior>
+  <a
+    className="text-blue-600 hover:text-blue-800 font-semibold"
+    onClick={() => console.log(`Navigating to post: /post/${post.slug}`)} // Log ici
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Lire la suite
+  </a>
+</Link>                      </div>
                     </article>
                   );
                 })}

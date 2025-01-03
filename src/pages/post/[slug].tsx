@@ -4,16 +4,20 @@ import client from '../../lib/apollo-client';
 
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   if (!params || typeof params.slug !== 'string') {
+    console.log("Paramètre slug invalide");
     return { notFound: true };
   }
 
   const slug = params.slug;
+  console.log("Slug récupéré:", slug);
 
   try {
     const { data } = await client.query({
       query: GET_POST_BY_SLUG,
       variables: { slug },
     });
+
+    console.log("Données récupérées :", data); // Vérifier si les données sont renvoyées
 
     if (!data.postBy) {
       return { notFound: true };

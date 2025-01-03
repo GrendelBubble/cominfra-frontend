@@ -10,9 +10,12 @@ const httpLink = createHttpLink({
 
 // 2. Créer un lien d'authentification (si nécessaire)
 const authLink = setContext((_, { headers }) => {
-  // Si vous avez un token JWT dans un cookie, vous pouvez l'ajouter ici
-  const token = document.cookie.split('; ').find(row => row.startsWith('authToken='));
-  const tokenValue = token ? token.split('=')[1] : null;
+  // Vérifier si nous sommes côté client (navigateur)
+  let tokenValue = null;
+  if (typeof window !== 'undefined') {
+    const token = document.cookie.split('; ').find(row => row.startsWith('authToken='));
+    tokenValue = token ? token.split('=')[1] : null;
+  }
 
   return {
     headers: {
@@ -31,14 +34,20 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       // Vous pouvez aussi gérer des erreurs spécifiques ici
       if (message.includes('Internal server error')) {
         // Par exemple, affichez un message d'erreur global pour l'utilisateur
-        alert("Il y a un problème avec le serveur. Veuillez réessayer plus tard.");
+        if (typeof window !== 'undefined') {
+          alert("Il y a un problème avec le serveur. Veuillez réessayer plus tard.");
+        }
       }
     });
   }
 
   if (networkError) {
     console.error(`[Network error]: ${networkError.message}`);
-    alert("Erreur réseau. Veuillez vérifier votre connexion.");
+    
+    // Vérifier si on est dans un environnement client (navigateur)
+    if (typeof window !== "undefined") {
+      alert("Erreur réseau. Veuillez vérifier votre connexion.");
+    }
   }
 });
 
