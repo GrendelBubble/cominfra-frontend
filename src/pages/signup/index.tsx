@@ -25,7 +25,6 @@ const SignUpPage: React.FC = () => {
     client: client,
     onCompleted: (data) => {
       const authToken = data.registerUser.authToken;
-      console.log('Auth Token:', authToken); // Log the token
       Cookies.set('token', authToken, { expires: 1 }); // Store the token in cookies
 
       // Redirect to the homepage after sign-up
@@ -49,7 +48,6 @@ const SignUpPage: React.FC = () => {
       return;
     }
 
-    console.log('Signing up with:', username, email, password); // Log the information
     registerUser({ variables: { username, email, password } }).catch((err) => {
       console.error('Signup Error:', err);
       setApolloError(err.message);

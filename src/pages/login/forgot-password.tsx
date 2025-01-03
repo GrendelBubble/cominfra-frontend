@@ -11,7 +11,6 @@ const ForgotPassword: React.FC = () => {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     // Simuler l'envoi de l'email de réinitialisation de mot de passe
-    console.log(`Email de réinitialisation envoyé à : ${email}`);
     setSubmitted(true);
 
     // Rediriger vers la page de connexion après 3 secondes
@@ -23,6 +22,29 @@ const ForgotPassword: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center sm:py-12">
       <div className="p-10 xs:p-0 mx-auto md:w-full md:max-w-md">
+        {/* Icône de retour à la page de login */}
+        <div className="absolute top-5 left-5 z-50">
+          <button
+            onClick={() => router.push('/login')}  // Redirection vers la page de login
+            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+          >
+            {/* Icône de retour en SVG */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="h-6 w-6 text-gray-800"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 12H5M12 5l-7 7 7 7"
+              />
+            </svg>
+          </button>
+        </div>
         <h1 className="font-bold text-center text-2xl mb-5">Mot de Passe Oublié</h1>
         <div className="bg-white shadow w-full rounded-lg divide-y divide-gray-200 p-5">
           {!submitted ? (

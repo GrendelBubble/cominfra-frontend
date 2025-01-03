@@ -44,7 +44,6 @@ const LoginPage: React.FC = () => {
     if (storedToken) {
       const decoded = decodeJWT(storedToken);
       if (decoded) {
-        console.log('Token décodé:', decoded);
         // Si le token est valide, récupérer les informations utilisateur
         client
           .query({
@@ -81,7 +80,6 @@ const LoginPage: React.FC = () => {
 
       const decoded = decodeJWT(authToken);
       if (decoded) {
-        console.log('Token décodé après connexion:', decoded);
         client
           .query({
             query: VIEWER_QUERY,
@@ -132,7 +130,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center sm:py-12">
       <div className="p-10 xs:p-0 mx-auto md:w-full md:max-w-md">
         {/* Icône de retour à la page d'accueil */}
-        <div className="absolute top-5 left-5">
+        <div className="absolute top-5 left-5 z-50">
           <button
             onClick={() => router.push('/')}  // Redirection vers la page d'accueil
             className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
@@ -189,7 +187,7 @@ const LoginPage: React.FC = () => {
           <div className="px-5 py-5 text-center text-sm text-gray-500">
             <p>
               Mot de passe oublié ?{' '}
-              <a href="/forgot-password" className="text-blue-500 hover:text-blue-600 font-semibold">
+              <a href="/login/forgot-password" className="text-blue-500 hover:text-blue-600 font-semibold">
                 Réinitialiser
               </a>
             </p>

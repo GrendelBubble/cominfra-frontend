@@ -20,7 +20,6 @@ function MyApp({ Component, pageProps }: AppProps) {
 
         {/* Footer commun */}
         <footer className="footer bg-gray-800 text-white text-center p-4">
-          <p>© 2024 Mon Application. Tous droits réservés.</p>
         </footer>
       </div>
     </ApolloProvider>

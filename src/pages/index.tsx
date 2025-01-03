@@ -24,7 +24,6 @@ function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [totalPosts, setTotalPosts] = useState(0);
-  const [pageInfo, setPageInfo] = useState<{ endCursor: string | null; hasNextPage: boolean }>({ endCursor: null, hasNextPage: false });
   const [totalPages, setTotalPages] = useState<number | null>(null); // Nouvel état pour le nombre total de pages
 
   // Fonction pour lire la valeur CSS --posts-per-page
@@ -139,35 +138,41 @@ function Home() {
   };
 
   // Récupération des posts d'une catégorie avec pagination
+  const [pageInfo, setPageInfo] = useState({
+    endCursor: null, // initialisation du curseur
+    hasNextPage: false, // indicateur de la présence d'une page suivante
+  });
+  
   const fetchPostsForCategory = async (categorySlug: string, page: number) => {
     setLoading(true);
     try {
-      const postsPerPage = getPostsPerPage(); // Nombre d'articles par page
-      const after = page > 1 ? posts[posts.length - 1]?.slug : null; // Récupérer le "slug" du dernier article comme curseur
-  
-      const response = await client.query({
-        query: LIST_POSTS, // Utilisez le nom de votre requête GraphQL
+      const after = page > 1 && pageInfo.endCursor ? pageInfo.endCursor : null;
+        const response = await client.query({
+        query: LIST_POSTS,
         variables: {
           categoryName: categorySlug,
-          first: postsPerPage, // Nombre de posts par page
-          after: after, // Le curseur après lequel récupérer les posts
+          first: postsPerPage,
+          after: after, // Passer le curseur pour récupérer les articles suivants
         },
       });
   
       const fetchedPosts = response.data.posts.nodes;
-      const pageInfo = response.data.posts.pageInfo;
+      const newPageInfo = response.data.posts.pageInfo;
   
-      setPosts((prevPosts) => (page === 1 ? fetchedPosts : [...prevPosts, ...fetchedPosts])); // Ajouter les posts à l'existant ou remplacer
-      setPageInfo(pageInfo);  // Mettre à jour les informations de pagination
-      setTotalPosts(response.data.posts.nodes.length); // Utilisez la bonne valeur pour le total
-    } catch (err: any) {
+      // Remplacer les posts précédents par ceux de la page actuelle
+      setPosts(fetchedPosts);
+  
+      // Mettre à jour pageInfo après l'appel API
+      setPageInfo(newPageInfo);
+  
+    } catch (err) {
+      console.error("Erreur lors de la récupération des posts:", err);
       setError("Erreur lors de la récupération des posts.");
-      console.error("Erreur lors de la récupération des posts :", err);  // Loguer l'erreur complète
     } finally {
       setLoading(false);
     }
   };
-
+        
   // Gestion de la catégorie active
   const handleCategoryClick = (slug: string, name: string) => {
     setActiveCategory(slug);
@@ -183,15 +188,18 @@ function Home() {
 
   };
 
-  // Gestion du changement de page
-  const handlePageChange = (after: string | null) => {
-    if (after) {
-      setCurrentPage((prevPage) => prevPage + 1);  // Si `after` existe, on passe à la page suivante
+  // Fonction de gestion de la page
+  const handlePageChange = (after: string | null, resetPosts: boolean = false) => {
+    if (resetPosts) {
+      // Si `resetPosts` est activé, on réinitialise les posts (par exemple, lors du changement de catégorie ou de retour à la première page)
+      setPosts([]);  // Effacer les posts précédents
+      setCurrentPage(1);  // Réinitialiser à la première page
     } else {
-      setCurrentPage(1);  // Sinon, on revient à la première page
+      // Si `after` est défini, on passe à la page suivante
+      setCurrentPage((prevPage) => prevPage + 1);  // Passer à la page suivante
     }
   };
-
+    
   // Chargement initial
   useEffect(() => {
     setPostsPerPage(getPostsPerPage());
@@ -201,14 +209,11 @@ function Home() {
 
   // Mise à jour des posts lorsque la catégorie active ou la page change
   useEffect(() => {
-    if (activeCategory) {
-      const categorySlug = categoriesWithImages.find((category: any) => category.slug === activeCategory)?.slug;
-      if (categorySlug) {
-        fetchPostsForCategory(categorySlug, currentPage);
-      }
+    if (activeCategory && currentPage) {
+      fetchPostsForCategory(activeCategory, currentPage);
     }
-  }, [activeCategory, currentPage]);
-
+  }, [activeCategory, currentPage]); // Ne pas inclure pageInfo dans les dépendances ici
+    
   if (loading) {
     return <div>Chargement des données...</div>;
   }
@@ -220,7 +225,7 @@ function Home() {
   return (
     <div>
       <Head>
-        <title>{siteInfo.title || "Mon Site"}</title>
+        <title>{siteInfo.title}</title>
         {siteInfo.icon && <link rel="icon" href={siteInfo.icon} />}
       </Head>
       {categoriesWithImages.length > 0 ? (
@@ -249,6 +254,9 @@ function Home() {
         totalPages={totalPages} // Passez le nombre total de pages à Body
         onPageChange={handlePageChange} // Gérer le changement de page
       />
+      <footer className="footer bg-gray-800 text-white text-center p-4">
+        <p>© 2024 {siteInfo.title}. Tous droits réservés.</p>
+      </footer>
     </div>
   );
 }
