@@ -2,92 +2,42 @@ import React, { useState, useEffect } from "react";
 import client from "../lib/apollo-client";
 import { SITE_INFO_QUERY } from "../graphql/queries/siteInfo";
 import { LIST_CATEGORIES } from "../graphql/queries/categories";
-import { LIST_POSTS } from "../graphql/queries/posts";
-import { LIST_BACKGROUNDIMAGES } from "../graphql/queries/backgroundImages"; // Importez la query
-import Head from "next/head";  // Importation de Head
+import { LIST_POSTS, INFO_POSTS } from "../graphql/queries/posts";
+import { LIST_BACKGROUNDIMAGES } from "../graphql/queries/backgroundImages";
+import { VIEWER_QUERY } from "../graphql/queries/viewer";
+import Head from "next/head";
 import { Header } from "../components/Header";
 import { Body } from "../components/Body";
 
 function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  // States généraux
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [siteInfo, setSiteInfo] = useState({ title: "", description: "", icon: "" });
   const [categoriesWithImages, setCategoriesWithImages] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [backgroundImageCaption, setBackgroundImageCaption] = useState<string | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(null); // Image de fond
-  const [backgroundImageCaption, setBackgroundImageCaption] = useState<string | null>(null); // Image de fond
+  const [postsPerPage, setPostsPerPage] = useState(12);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [pageInfo, setPageInfo] = useState<{ endCursor: string | null; hasNextPage: boolean }>({ endCursor: null, hasNextPage: false });
+  const [totalPages, setTotalPages] = useState<number | null>(null); // Nouvel état pour le nombre total de pages
 
-  // Fonction pour récupérer les images de fond
-  const fetchCategoriesWithImages = async () => {
-    setLoading(true);
-    try {
-      const categoriesResponse = await client.query({
-        query: LIST_CATEGORIES,
-      });
-      const categories = categoriesResponse.data.categories.nodes;
-
-      // Si vous avez des catégories, récupérer les images associées
-      if (categories.length > 0) {
-        const categorySlugs = categories.map((category: any) => category.slug);
-
-        // Récupérer les images de fond associées aux catégories
-        const mediaResponse = await client.query({
-          query: LIST_BACKGROUNDIMAGES,
-          variables: { slugs: categorySlugs },
-        });
-
-        const mediaItems = mediaResponse.data.mediaItems.nodes;
-
-        // Associer chaque catégorie avec une image (si elle existe)
-        const categoriesWithImages = categories.map((category: any) => {
-          const matchingMedia = mediaItems.find(
-            (mediaItem: any) => mediaItem.slug === category.slug
-          );
-
-          return {
-            name: category.name,
-            slug: category.slug,
-            link: matchingMedia ? matchingMedia.link : null, // Si une image est trouvée
-            caption: matchingMedia
-              ? matchingMedia.caption || siteInfo.description
-              : siteInfo.description,
-          };
-        });
-
-        setCategoriesWithImages(categoriesWithImages);
-
-        // Définir la première catégorie et la première image de fond par défaut
-        const firstCategory = categoriesWithImages[0];
-        if (firstCategory) {
-          setActiveCategory(firstCategory.slug);
-          setBackgroundImage(firstCategory.link);
-          setBackgroundImageCaption(firstCategory.caption);
-        }
-      }
-    } catch (err) {
-      setError("Erreur lors de la récupération des catégories et des images.");
-    } finally {
-      setLoading(false);
-    }
+  // Fonction pour lire la valeur CSS --posts-per-page
+  const getPostsPerPage = (): number => {
+    const rootStyles = getComputedStyle(document.documentElement);
+    const value = rootStyles.getPropertyValue("--posts-per-page").trim();
+    return value ? parseInt(value, 10) : 12;
   };
 
-  // Fonction pour vérifier l'état de connexion
-  const checkLoginStatus = () => {
-    const token = document.cookie.split(";").find((cookie) => cookie.trim().startsWith("token="));
-    if (token) {
-      setIsLoggedIn(true);
-    }
-  };
-
+  // Récupération des infos du site
   const fetchSiteInfo = async () => {
     try {
-      const response = await client.query({
-        query: SITE_INFO_QUERY,
-      });
-
+      const response = await client.query({ query: SITE_INFO_QUERY });
       const { allSettings, siteIconLink } = response.data;
 
       setSiteInfo({
@@ -100,51 +50,164 @@ function Home() {
     }
   };
 
-  const fetchPostsForCategory = async (categorySlug: string) => {
-    setLoading(true);
+  // Vérification du statut de connexion
+  const checkLoginStatus = async () => {
+    const token = document.cookie.split(";").find((cookie) => cookie.trim().startsWith("token="));
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
     try {
       const response = await client.query({
-        query: LIST_POSTS,
-        variables: { categoryName: categorySlug, qtyReturned: 5 },
+        query: VIEWER_QUERY,  // Query pour récupérer les infos de l'utilisateur
+        context: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       });
-      setPosts(response.data.posts.nodes);
+      setIsLoggedIn(true);
+      setCurrentUser(response.data.viewer);  // Utilisez la réponse pour mettre à jour currentUser
     } catch (err) {
-      setError("Erreur lors de la récupération des posts.");
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+    }
+  };
+
+  // Récupération des catégories et images associées
+  const fetchCategoriesWithImages = async () => {
+    setLoading(true);
+    try {
+      const categoriesResponse = await client.query({ query: LIST_CATEGORIES });
+      const categories = categoriesResponse.data.categories.nodes;
+
+      if (categories.length > 0) {
+        const categorySlugs = categories.map((category: any) => category.slug);
+        const mediaResponse = await client.query({
+          query: LIST_BACKGROUNDIMAGES,
+          variables: { slugs: categorySlugs },
+        });
+        const mediaItems = mediaResponse.data.mediaItems.nodes;
+
+        const categoriesWithImages = categories.map((category: any) => {
+          const matchingMedia = mediaItems.find(
+            (mediaItem: any) => mediaItem.slug === category.slug
+          );
+          return {
+            name: category.name,
+            slug: category.slug,
+            link: matchingMedia ? matchingMedia.link : null,
+            caption: matchingMedia
+              ? matchingMedia.caption || siteInfo.description
+              : siteInfo.description,
+          };
+        });
+
+        setCategoriesWithImages(categoriesWithImages);
+
+        const firstCategory = categoriesWithImages[0];
+        if (firstCategory) {
+          setActiveCategory(firstCategory.slug);
+          setBackgroundImage(firstCategory.link);
+          setBackgroundImageCaption(firstCategory.caption);
+        }
+      }
+    } catch (err) {
+      setError("Erreur lors de la récupération des catégories.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCategoryClick = (slug: string) => {
-    setActiveCategory(slug);
-    fetchPostsForCategory(slug);
+  // Récupération des informations de pagination (nombre de pages pour la catégorie)
+  const fetchCategoryInfo = async (categoryName: string) => {
+    try {
+      const postsPerPage = getPostsPerPage();
+      const response = await client.query({
+        query: INFO_POSTS, // Requête INFO_POSTS pour obtenir le nombre de pages
+        variables: {
+          categoryName: categoryName,  // Utilisation du nom de la catégorie
+          postPerPage: postsPerPage,
+        },
+      });
+
+      const { postsPagesByCategoryName } = response.data.postsCategoryInfos;
+      setTotalPages(postsPagesByCategoryName); // Stocke le nombre total de pages dans l'état
+    } catch (err) {
+      setError("Erreur lors de la récupération des informations de la catégorie.");
+    }
   };
 
-  // useEffect déclenché uniquement lorsque la catégorie active change
+  // Récupération des posts d'une catégorie avec pagination
+  const fetchPostsForCategory = async (categorySlug: string, page: number) => {
+    setLoading(true);
+    try {
+      const postsPerPage = getPostsPerPage(); // Nombre d'articles par page
+      const after = page > 1 ? posts[posts.length - 1]?.slug : null; // Récupérer le "slug" du dernier article comme curseur
+  
+      const response = await client.query({
+        query: LIST_POSTS, // Utilisez le nom de votre requête GraphQL
+        variables: {
+          categoryName: categorySlug,
+          first: postsPerPage, // Nombre de posts par page
+          after: after, // Le curseur après lequel récupérer les posts
+        },
+      });
+  
+      const fetchedPosts = response.data.posts.nodes;
+      const pageInfo = response.data.posts.pageInfo;
+  
+      setPosts((prevPosts) => (page === 1 ? fetchedPosts : [...prevPosts, ...fetchedPosts])); // Ajouter les posts à l'existant ou remplacer
+      setPageInfo(pageInfo);  // Mettre à jour les informations de pagination
+      setTotalPosts(response.data.posts.nodes.length); // Utilisez la bonne valeur pour le total
+    } catch (err: any) {
+      setError("Erreur lors de la récupération des posts.");
+      console.error("Erreur lors de la récupération des posts :", err);  // Loguer l'erreur complète
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gestion de la catégorie active
+  const handleCategoryClick = (slug: string, name: string) => {
+    setActiveCategory(slug);
+    setCurrentPage(1); // Réinitialise la pagination à la première page
+    fetchCategoryInfo(name); // Récupère les informations de pagination à chaque changement de catégorie
+
+    // Met à jour l'image de fond et la légende correspondantes
+    const selectedCategory = categoriesWithImages.find((category) => category.slug === slug);
+    if (selectedCategory) {
+      setBackgroundImage(selectedCategory.link); // Met à jour l'image de fond
+      setBackgroundImageCaption(selectedCategory.caption); // Met à jour la légende
+    }
+
+  };
+
+  // Gestion du changement de page
+  const handlePageChange = (after: string | null) => {
+    if (after) {
+      setCurrentPage((prevPage) => prevPage + 1);  // Si `after` existe, on passe à la page suivante
+    } else {
+      setCurrentPage(1);  // Sinon, on revient à la première page
+    }
+  };
+
+  // Chargement initial
+  useEffect(() => {
+    setPostsPerPage(getPostsPerPage());
+    fetchSiteInfo();
+    fetchCategoriesWithImages();
+  }, []);
+
+  // Mise à jour des posts lorsque la catégorie active ou la page change
   useEffect(() => {
     if (activeCategory) {
-      fetchPostsForCategory(activeCategory); // Récupérer les posts pour la catégorie sélectionnée
-
-      // Trouver l'image correspondante à la catégorie active
-      const activeCategoryImage = categoriesWithImages.find(
-        (category) => category.slug === activeCategory
-      );
-
-      // Si une image est trouvée, mettre à jour l'état de l'image de fond
-      if (activeCategoryImage && activeCategoryImage.link) {
-        setBackgroundImage(activeCategoryImage.link);
-        setBackgroundImageCaption(activeCategoryImage.caption);
-        console.log("Nouvelle image de fond :", activeCategoryImage.link); // Juste pour vérifier dans la console
+      const categorySlug = categoriesWithImages.find((category: any) => category.slug === activeCategory)?.slug;
+      if (categorySlug) {
+        fetchPostsForCategory(categorySlug, currentPage);
       }
     }
-  }, [activeCategory, categoriesWithImages]); // Ajoutez `categoriesWithImages` dans la dépendance
-
-  // useEffect pour initialiser les données au premier chargement de la page
-  useEffect(() => {
-    checkLoginStatus();
-    fetchSiteInfo();
-    fetchCategoriesWithImages(); // Appelez cette fonction pour récupérer les catégories et les images
-  }, []); // Effect au premier rendu (équivalent de componentDidMount)
+  }, [activeCategory, currentPage]);
 
   if (loading) {
     return <div>Chargement des données...</div>;
@@ -172,13 +235,19 @@ function Home() {
           onLogout={() => setIsLoggedIn(false)}
           onCategoryClick={handleCategoryClick}
           backgroundImage={backgroundImage}
-          backgroundImageCaption={backgroundImageCaption} currentUser={undefined}        />
+          backgroundImageCaption={backgroundImageCaption}
+        />
       ) : (
         <div>Aucune catégorie disponible</div>
       )}
       <Body
         activeCategory={activeCategory}
         posts={posts}
+        postsPerPage={postsPerPage}
+        currentPage={currentPage}
+        pageInfo={pageInfo}  // Passez les informations de pagination
+        totalPages={totalPages} // Passez le nombre total de pages à Body
+        onPageChange={handlePageChange} // Gérer le changement de page
       />
     </div>
   );

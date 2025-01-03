@@ -12,11 +12,10 @@ interface HeaderProps {
   siteDescription: string;
   siteIconLink: string;
   isLoggedIn: boolean;
-  currentUser: any;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
   setCurrentUser: React.Dispatch<React.SetStateAction<any>>;
   onLogout: () => void;
-  onCategoryClick: (slug: string) => void;
+  onCategoryClick: (slug: string, name: string) => void;  // Attendez deux arguments
   backgroundImage: string | null;
   backgroundImageCaption: string | null;
 }
@@ -27,7 +26,6 @@ export const Header: React.FC<HeaderProps> = ({
   siteDescription,
   siteIconLink,
   isLoggedIn,
-  currentUser,
   setIsLoggedIn,
   setCurrentUser,
   onLogout,
@@ -47,13 +45,16 @@ export const Header: React.FC<HeaderProps> = ({
 
   const checkLoginStatus = async () => {
     const token = Cookies.get("token");
+  
     if (!token) {
+      // Si le token est introuvable, déconnecter l'utilisateur et effacer ses données
       setIsLoggedIn(false);
-      setCurrentUser(null);
+      setCurrentUser(null); // Réinitialiser l'état de l'utilisateur
       return;
     }
-
+  
     try {
+      // Ici, vous pouvez effectuer une requête pour vérifier si le token est valide et obtenir les données de l'utilisateur
       const response = await client.query({
         query: VIEWER_QUERY,
         context: {
@@ -62,21 +63,20 @@ export const Header: React.FC<HeaderProps> = ({
           },
         },
       });
-
+  
+      // Si la réponse est valide, mettre à jour les données de l'utilisateur
       setCurrentUser(response.data.viewer);
       setIsLoggedIn(true);
-      setAuthError(null);
     } catch (err) {
       setIsLoggedIn(false);
       setCurrentUser(null);
       setAuthError("Impossible de vérifier l'authentification.");
     }
   };
-
+  
   const handleLogout = () => {
     Cookies.remove("token");
     setIsLoggedIn(false);
-    setCurrentUser(null);
     onLogout();
     router.push("/"); // Redirection après déconnexion
   };
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Contenu centré pour les titres */}
       <div className="header-content">
         <div className="header-site">{siteTitle}</div>
-        <div className="header-caption">{backgroundImageCaption}</div>
+        <div className="header-caption">{headerCaption}</div>
       </div>
 
       {/* Conteneur pour les menus (aligné en haut à droite) */}
@@ -146,7 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <li key={category.slug}>
                   <button
                     onClick={() => {
-                      onCategoryClick(category.slug);
+                      onCategoryClick(category.slug,category.name);
                       setIsMenuOpen(false); // Ferme le menu après avoir sélectionné une catégorie
                     }}
                     className="text-lg hover:underline"
@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
             {categories.map((category) => (
               <li key={category.slug}>
                 <button
-                  onClick={() => onCategoryClick(category.slug)}
+                  onClick={() => onCategoryClick(category.slug,category.name)}
                   className="text-lg hover:underline"
                 >
                   {category.name}

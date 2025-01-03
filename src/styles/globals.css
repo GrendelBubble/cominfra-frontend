@@ -8,8 +8,8 @@
   --header-height: max(33vh, 12rem); /* Définition de la hauteur du header */
   --icon-size: 4rem; /* Taille des icônes */
   --icon-margin: 0.5rem; /* Marge des icônes */
-  --header-padding: 0.5rem /* Marges du header */
-  --qty-returned: 12; /* Valeur par défaut si la variable n'est pas définie */
+  --header-padding: 0.5rem; /* Marges du header */
+  --posts-per-page: 2; /* Valeur par défaut si la variable n'est pas définie */
 }
 
 .header {
