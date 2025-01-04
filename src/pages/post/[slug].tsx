@@ -3,29 +3,37 @@ import { GET_POST_BY_SLUG } from "../../graphql/queries/post";
 import client from '../../lib/apollo-client';
 import { format } from "date-fns";
 import { fr } from 'date-fns/locale'; // Importer la locale française
+import DOMPurify from "dompurify";  // Importation de DOMPurify pour assainir le contenu HTML
 
+// Récupération des données côté serveur (getServerSideProps)
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+  // Vérification que le slug est bien passé dans les params
   if (!params || typeof params.slug !== 'string') {
     return { notFound: true };
   }
 
   const slug = params.slug;
+
   try {
+    // Appel GraphQL pour récupérer les données du post par slug
     const { data } = await client.query({
       query: GET_POST_BY_SLUG,
       variables: { slug },
     });
 
+    // Vérification que le post existe bien
     if (!data.postBy) {
       return { notFound: true };
     }
 
+    // Retourner les données du post
     return {
       props: {
         post: data.postBy,
       },
     };
   } catch (error) {
+    // Si erreur, renvoyer la page 404
     return { notFound: true };
   }
 };
@@ -58,6 +66,11 @@ const PostPage = ({ post }: PostPageProps) => {
   // Formater la date de modification avec `date-fns` et la locale française
   const formattedmodified = format(new Date(post.modified), "dd MMMM yyyy", { locale: fr });
 
+  // Assainir le contenu HTML côté client uniquement
+  const sanitizedHtmlContent = typeof window !== "undefined"
+    ? DOMPurify.sanitize(post.content)
+    : post.content;  // En dehors du navigateur, on garde le contenu d'origine
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="container mx-auto mb-32 px-4 py-12 text-justify flex-grow">
@@ -69,7 +82,7 @@ const PostPage = ({ post }: PostPageProps) => {
             className="image"
           />
         )}
-        {/* Article Section */}
+        {/* Section Article */}
         <div className="p-8">
           <h3 className="titre">{post.title || "Titre manquant"}</h3>
           <div className="date">
@@ -80,10 +93,8 @@ const PostPage = ({ post }: PostPageProps) => {
               Mis à jour le {formattedmodified}
             </div>
           )}
-          <div
-            className="texte"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+          {/* Rendu sécurisé du contenu HTML */}
+          <div dangerouslySetInnerHTML={{ __html: sanitizedHtmlContent }} />
         </div>
       </div>
     </div>

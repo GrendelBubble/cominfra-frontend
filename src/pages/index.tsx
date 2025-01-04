@@ -24,8 +24,6 @@ function Home() {
   const [postsPerPage, setPostsPerPage] = useState(12);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [totalPosts, setTotalPosts] = useState(0);
   const [totalPages, setTotalPages] = useState<number | null>(null); // Nouvel état pour le nombre total de pages
 
   // Fonction pour lire la valeur CSS --posts-per-page
@@ -48,30 +46,6 @@ function Home() {
       });
     } catch (err) {
       setError("Erreur lors de la récupération des informations du site.");
-    }
-  };
-
-  // Vérification du statut de connexion
-  const checkLoginStatus = async () => {
-    const token = document.cookie.split(";").find((cookie) => cookie.trim().startsWith("token="));
-    if (!token) {
-      setIsLoggedIn(false);
-      return;
-    }
-    try {
-      const response = await client.query({
-        query: VIEWER_QUERY,  // Query pour récupérer les infos de l'utilisateur
-        context: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      });
-      setIsLoggedIn(true);
-      setCurrentUser(response.data.viewer);  // Utilisez la réponse pour mettre à jour currentUser
-    } catch (err) {
-      setIsLoggedIn(false);
-      setCurrentUser(null);
     }
   };
 
@@ -248,7 +222,6 @@ function Home() {
           siteIconLink={siteInfo.icon}
           isLoggedIn={isLoggedIn}
           setIsLoggedIn={setIsLoggedIn}
-          setCurrentUser={setCurrentUser}
           onLogout={() => setIsLoggedIn(false)}
           onCategoryClick={handleCategoryClick}
           backgroundImage={backgroundImage}

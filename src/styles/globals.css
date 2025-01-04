@@ -12,6 +12,22 @@
   --posts-per-page: 12; /* Valeur par défaut si la variable n'est pas définie */
 }
 
+h1 {
+  @apply text-2xl font-bold text-black mt-8 mb-8 line-clamp-2;  
+}  
+
+h2 {
+  @apply text-xl font-semibold text-black mt-4 mb-4 line-clamp-2;  
+}  
+
+h3 {
+  @apply font-semibold text-black mt-4 mb-4 line-clamp-2;  
+}  
+
+p {
+  @apply text-gray-800 mt-0 mb-0;  
+}  
+
 .footer {
   position: fixed;
   bottom: 0;
@@ -20,6 +36,7 @@
   padding: 1rem;
   text-align: center;
 }
+
 .image {
   @apply mx-auto w-auto h-auto mt-4 mb-4;  
   height: var(--header-height); /* Utilisation de la variable pour la hauteur du header */

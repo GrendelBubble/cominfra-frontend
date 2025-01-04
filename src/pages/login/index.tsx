@@ -3,12 +3,7 @@ import { useMutation, ApolloError } from '@apollo/client';
 import { useRouter } from 'next/router';
 import client from '../../lib/apollo-client';
 import ErrorMessage from '../../components/ErrorMessage';
-import Cookies from 'js-cookie';
-
-// Importation correcte de jwt-decode selon la version de la bibliothèque
-import jwt_decode from 'jwt-decode'; // Ou import { jwt_decode } from 'jwt-decode'; si nécessaire
-
-// Import des mutations et requêtes GraphQL
+import { decodeJWT, getTokenFromCookies, setTokenInCookies } from '../../utils/authUtils';  // Import des utilitaires
 import { LOGIN_MUTATION } from '../../graphql/mutations/login';
 import { VIEWER_QUERY } from '../../graphql/queries/viewer';
 
@@ -25,26 +20,13 @@ const LoginPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [apolloError, setApolloError] = useState<string | null>(null);
-  const router = useRouter();  // Initialisation du router pour la redirection
+  const router = useRouter();
 
-  // Décoder le token JWT
-  const decodeJWT = (token: string) => {
-    try {
-      const decoded = jwt_decode(token);  // Décodage du token
-      return decoded;
-    } catch (error) {
-      console.error('Erreur lors du décodage du token:', error);
-      return null;
-    }
-  };
-
-  // Vérifier l'état de la connexion et décoder le token
   const checkLoginStatus = () => {
-    const storedToken = Cookies.get('token');
+    const storedToken = getTokenFromCookies();
     if (storedToken) {
       const decoded = decodeJWT(storedToken);
       if (decoded) {
-        // Si le token est valide, récupérer les informations utilisateur
         client
           .query({
             query: VIEWER_QUERY,
@@ -58,13 +40,13 @@ const LoginPage: React.FC = () => {
             const user = response.data.viewer;
             setCurrentUser(user);
           })
-          .catch((err) => console.error('Erreur lors de la récupération des données de l\'utilisateur:', err));
+          .catch((err) => console.error("Erreur lors de la récupération des données de l'utilisateur:", err));
       }
     }
   };
 
   useEffect(() => {
-    checkLoginStatus();  // Vérification de l'état de connexion au chargement
+    checkLoginStatus();
   }, []);
 
   const [login, { loading }] = useMutation(LOGIN_MUTATION, {
@@ -72,11 +54,7 @@ const LoginPage: React.FC = () => {
     onCompleted: (data) => {
       const authToken = data.login.authToken;
       setToken(authToken);
-      Cookies.set('token', authToken, {
-        expires: 7,
-        secure: process.env.NODE_ENV === 'production',  // Utiliser secure en production seulement
-        sameSite: 'Lax',  // Assure-toi que SameSite est correctement défini
-      });
+      setTokenInCookies(authToken);  // Utilisation de la fonction utilitaire pour stocker le token
 
       const decoded = decodeJWT(authToken);
       if (decoded) {
@@ -92,7 +70,7 @@ const LoginPage: React.FC = () => {
           .then((response) => {
             const user = response.data.viewer;
             setCurrentUser(user);
-            router.push('/');  // Redirection vers la page d'accueil après la connexion réussie
+            router.push('/');
           })
           .catch((err) => console.error('Error fetching viewer data:', err));
       }
@@ -109,7 +87,7 @@ const LoginPage: React.FC = () => {
     setApolloError(null);
 
     if (!username || !password) {
-      setValidationError('Les champs d\'identifiant et de mot de passe ne peuvent pas être vides.');
+      setValidationError("Les champs d'identifiant et de mot de passe ne peuvent pas être vides.");
       return;
     }
 
@@ -129,15 +107,13 @@ const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center sm:py-12">
       <div className="p-10 xs:p-0 mx-auto md:w-full md:max-w-md">
-        {/* Icône de retour à la page d'accueil */}
+        {/* Bouton de retour */}
         <div className="absolute top-5 left-5 z-50">
           <button
-            onClick={() => router.push('/')}  // Redirection vers la page d'accueil
-            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
+            onClick={() => router.push('/')}
+            className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center"
           >
-            {/* Icône de retour en SVG */}
             <svg
-              xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -152,7 +128,7 @@ const LoginPage: React.FC = () => {
             </svg>
           </button>
         </div>
-        
+
         <h1 className="font-bold text-center text-2xl mb-5">Connexion</h1>
         <div className="bg-white shadow w-full rounded-lg divide-y divide-gray-200">
           <form onSubmit={handleLogin} className="px-5 py-7">

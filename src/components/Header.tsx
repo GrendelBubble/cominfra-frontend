@@ -13,7 +13,6 @@ interface HeaderProps {
   siteIconLink: string;
   isLoggedIn: boolean;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
-  setCurrentUser: React.Dispatch<React.SetStateAction<any>>;
   onLogout: () => void;
   onCategoryClick: (slug: string, name: string) => void;  // Attendez deux arguments
   backgroundImage: string | null;
@@ -27,7 +26,6 @@ export const Header: React.FC<HeaderProps> = ({
   siteIconLink,
   isLoggedIn,
   setIsLoggedIn,
-  setCurrentUser,
   onLogout,
   onCategoryClick,
   backgroundImage,
@@ -49,7 +47,6 @@ export const Header: React.FC<HeaderProps> = ({
     if (!token) {
       // Si le token est introuvable, déconnecter l'utilisateur et effacer ses données
       setIsLoggedIn(false);
-      setCurrentUser(null); // Réinitialiser l'état de l'utilisateur
       return;
     }
   
@@ -65,11 +62,9 @@ export const Header: React.FC<HeaderProps> = ({
       });
   
       // Si la réponse est valide, mettre à jour les données de l'utilisateur
-      setCurrentUser(response.data.viewer);
       setIsLoggedIn(true);
     } catch (err) {
       setIsLoggedIn(false);
-      setCurrentUser(null);
       setAuthError("Impossible de vérifier l'authentification.");
     }
   };
