@@ -19,8 +19,6 @@ function MyApp({ Component, pageProps }: AppProps) {
         </main>
 
         {/* Footer commun */}
-        <footer className="footer bg-gray-800 text-white text-center p-4">
-        </footer>
       </div>
     </ApolloProvider>
   );

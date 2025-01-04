@@ -8,6 +8,8 @@ import { VIEWER_QUERY } from "../graphql/queries/viewer";
 import Head from "next/head";
 import { Header } from "../components/Header";
 import { Body } from "../components/Body";
+import { format } from "date-fns";
+import { fr } from 'date-fns/locale';  // Importer la locale française
 
 function Home() {
   // States généraux
@@ -158,9 +160,19 @@ function Home() {
   
       const fetchedPosts = response.data.posts.nodes;
       const newPageInfo = response.data.posts.pageInfo;
-  
+
+      // Formater les dates `date` et `modified` avec date-fns
+      const formattedPosts = fetchedPosts.map((post: any) => {
+        return {
+          ...post,
+          date: format(new Date(post.date), "dd MMMM yyyy", { locale: fr }), // Format de la date de publication
+          modified: format(new Date(post.modified), "dd MMMM yyyy", { locale: fr }), // Format de la date de modification
+        };
+      });
+
       // Remplacer les posts précédents par ceux de la page actuelle
-      setPosts(fetchedPosts);
+      //setPosts(fetchedPosts);
+      setPosts(formattedPosts);    
   
       // Mettre à jour pageInfo après l'appel API
       setPageInfo(newPageInfo);

@@ -1,4 +1,4 @@
-import { FaChevronLeft, FaChevronRight, FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa';
+import { FaAngleLeft, FaAngleRight, FaAngleDoubleLeft, FaAngleDoubleRight } from 'react-icons/fa';
 import Link from "next/link";
 
 interface BodyProps {
@@ -58,11 +58,19 @@ export const Body: React.FC<BodyProps> = ({
                       key={post.slug}
                       className="p-6 bg-white rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out"
                     >
-                      <h3 className="text-2xl font-semibold text-gray-800 mb-4 line-clamp-2">
+                      <h3 className="titre">
                         {post.title || "Titre manquant"}
                       </h3>
+                      <div className="date">
+                         Edité le {post.date} par <span className="font-bold">{post.author?.node?.name || "Auteur inconnu"}</span>
+                      </div>
+                      {post.date !== post.modified && (
+                        <div className="date">
+                          Mis à jour le {post.modified}
+                        </div>
+                      )}                      
                       <div
-                        className="text-lg text-gray-700 leading-relaxed text-justify line-clamp-3"
+                        className="text-lg text-gray-700 leading-relaxed text-justify line-clamp-3 mt-4"
                         dangerouslySetInnerHTML={{
                           __html: excerpt,
                         }}
@@ -91,8 +99,8 @@ export const Body: React.FC<BodyProps> = ({
                   disabled={currentPage === 1}
                   className={`px-4 py-2 rounded flex items-center ${
                     currentPage === 1
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-800"
+                      ? "bg-transparent text-gray-300 cursor-not-allowed"
+                      : "bg-transparent text-black hover:bg-gray-300"
                   }`}
                 >
                   <FaAngleDoubleLeft className="mr-2" />
@@ -102,13 +110,13 @@ export const Body: React.FC<BodyProps> = ({
                 <button
                   onClick={handlePrevious}
                   disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded flex items-center ${
+                  className={`mr-4 px-4 py-2 rounded flex items-center ${
                     currentPage === 1
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-800"
-                  }`}
+                    ? "bg-transparent text-gray-300 cursor-not-allowed"
+                    : "bg-transparent text-black hover:bg-gray-300"
+              }`}
                 >
-                  <FaChevronLeft className="mr-2" />
+                  <FaAngleLeft className="mr-2" />
                 </button>
 
                 {/* Page info */}
@@ -120,13 +128,13 @@ export const Body: React.FC<BodyProps> = ({
                 <button
                   onClick={handleNext}
                   disabled={!pageInfo.hasNextPage || currentPage === totalPages}
-                  className={`px-4 py-2 rounded flex items-center ${
+                  className={`ml-4 px-4 py-2 rounded flex items-center ${
                     !pageInfo.hasNextPage || currentPage === totalPages
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-800"
-                  }`}
+                      ? "bg-transparent text-gray-300 cursor-not-allowed"
+                      : "bg-transparent text-black hover:bg-gray-300"
+              }`}
                 >
-                  <FaChevronRight className="mr-2" />
+                  <FaAngleRight className="mr-2" />
                 </button>
 
                 {/* Dernière page */}
@@ -135,9 +143,9 @@ export const Body: React.FC<BodyProps> = ({
                   disabled={currentPage === totalPages}
                   className={`px-4 py-2 rounded flex items-center ${
                     currentPage === totalPages
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-800"
-                  }`}
+                      ? "bg-transparent text-gray-300 cursor-not-allowed"
+                      : "bg-transparent text-black hover:bg-gray-300"
+              }`}
                 >
                   <FaAngleDoubleRight className="mr-2" />
                 </button>
