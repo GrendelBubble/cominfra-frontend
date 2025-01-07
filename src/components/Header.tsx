@@ -14,7 +14,7 @@ interface HeaderProps {
   isLoggedIn: boolean;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
   onLogout: () => void;
-  onCategoryClick: (slug: string, name: string) => void;  // Attendez deux arguments
+  onCategoryClick: (id: string, name: string, slug: string) => void;  // Attendez deux arguments
   backgroundImage: string | null;
   backgroundImageCaption: string | null;
 }
@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <li key={category.slug}>
                   <button
                     onClick={() => {
-                      onCategoryClick(category.slug,category.name);
+                      onCategoryClick(category.id,category.name,category.slug);
                       setIsMenuOpen(false); // Ferme le menu après avoir sélectionné une catégorie
                     }}
                     className="text-lg hover:underline"
@@ -170,7 +170,7 @@ export const Header: React.FC<HeaderProps> = ({
             {categories.map((category) => (
               <li key={category.slug}>
                 <button
-                  onClick={() => onCategoryClick(category.slug,category.name)}
+                  onClick={() => onCategoryClick(category.id,category.name,category.slug)}
                   className="text-lg hover:underline"
                 >
                   {category.name}

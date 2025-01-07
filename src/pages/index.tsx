@@ -3,7 +3,6 @@ import client from "../lib/apollo-client";
 import { SITE_INFO_QUERY } from "../graphql/queries/siteInfo";
 import { LIST_CATEGORIES } from "../graphql/queries/categories";
 import { LIST_POSTS, INFO_POSTS } from "../graphql/queries/posts";
-import { LIST_BACKGROUNDIMAGES } from "../graphql/queries/backgroundImages";
 import { VIEWER_QUERY } from "../graphql/queries/viewer";
 import Head from "next/head";
 import { Header } from "../components/Header";
@@ -16,7 +15,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [siteInfo, setSiteInfo] = useState({ title: "", description: "", icon: "" });
-  const [categoriesWithImages, setCategoriesWithImages] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);  // Catégories sans les images
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [backgroundImageCaption, setBackgroundImageCaption] = useState<string | null>(null);
@@ -25,13 +24,7 @@ function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [totalPages, setTotalPages] = useState<number | null>(null); // Nouvel état pour le nombre total de pages
-
-  // Fonction pour lire la valeur CSS --posts-per-page
-  const getPostsPerPage = (): number => {
-    const rootStyles = getComputedStyle(document.documentElement);
-    const value = rootStyles.getPropertyValue("--posts-per-page").trim();
-    return value ? parseInt(value, 10) : 12;
-  };
+  const [loadingPagination, setLoadingPagination] = useState(false); // Nouvel état pour gérer le chargement de la pagination
 
   // Récupération des infos du site
   const fetchSiteInfo = async () => {
@@ -49,43 +42,49 @@ function Home() {
     }
   };
 
-  // Récupération des catégories et images associées
-  const fetchCategoriesWithImages = async () => {
+  // Récupération des catégories
+  const fetchCategories = async () => {
     setLoading(true);
     try {
       const categoriesResponse = await client.query({ query: LIST_CATEGORIES });
-      const categories = categoriesResponse.data.categories.nodes;
 
-      if (categories.length > 0) {
-        const categorySlugs = categories.map((category: any) => category.slug);
-        const mediaResponse = await client.query({
-          query: LIST_BACKGROUNDIMAGES,
-          variables: { slugs: categorySlugs },
-        });
-        const mediaItems = mediaResponse.data.mediaItems.nodes;
+      if (!categoriesResponse || !categoriesResponse.data || !categoriesResponse.data.categories || !categoriesResponse.data.categories.edges) {
+        setError("Données des catégories manquantes ou mal structurées.");
+        return;
+      }
 
-        const categoriesWithImages = categories.map((category: any) => {
-          const matchingMedia = mediaItems.find(
-            (mediaItem: any) => mediaItem.slug === category.slug
-          );
-          return {
-            name: category.name,
-            slug: category.slug,
-            link: matchingMedia ? matchingMedia.link : null,
-            caption: matchingMedia
-              ? matchingMedia.caption || siteInfo.description
-              : siteInfo.description,
-          };
-        });
+      const categories = categoriesResponse.data.categories.edges;
 
-        setCategoriesWithImages(categoriesWithImages);
+      if (!Array.isArray(categories)) {
+        setError("Les catégories ne sont pas sous forme de tableau.");
+        return;
+      }
 
-        const firstCategory = categoriesWithImages[0];
+      // Filtrer les catégories pour garder uniquement celles avec isMenu = true et enableMenu = true
+      const filteredCategories = categories.filter((categoryEdge: any) => 
+        categoryEdge.node.acfCustomFields?.isMenu === true && categoryEdge.node.acfCustomFields?.enableMenu === true
+      );
+
+      if (filteredCategories.length > 0) {
+        const categoriesList = filteredCategories.map((categoryEdge: any) => ({
+          name: categoryEdge.node.name,
+          slug: categoryEdge.node.slug,
+          mediaItemUrl: categoryEdge.node.acfCustomFields?.backgroundImage?.node?.mediaItemUrl || null,
+          caption: categoryEdge.node.description,
+          postsPerPage: categoryEdge.node.acfCustomFields?.postsPerPage,
+        }));
+
+        setCategories(categoriesList);
+
+        const firstCategory = categoriesList[0];
         if (firstCategory) {
           setActiveCategory(firstCategory.slug);
-          setBackgroundImage(firstCategory.link);
+          setBackgroundImage(firstCategory.mediaItemUrl);
           setBackgroundImageCaption(firstCategory.caption);
+          setPostsPerPage(firstCategory.postsPerPage || 12);
         }
+      } else {
+        setError("Aucune catégorie correspondante trouvée.");
       }
     } catch (err) {
       setError("Erreur lors de la récupération des catégories.");
@@ -97,110 +96,109 @@ function Home() {
   // Récupération des informations de pagination (nombre de pages pour la catégorie)
   const fetchCategoryInfo = async (categoryName: string) => {
     try {
-      const postsPerPage = getPostsPerPage();
+      setLoadingPagination(true); // Active le chargement de la pagination
+
       const response = await client.query({
-        query: INFO_POSTS, // Requête INFO_POSTS pour obtenir le nombre de pages
+        query: INFO_POSTS,
         variables: {
-          categoryName: categoryName,  // Utilisation du nom de la catégorie
+          categoryName: categoryName,
           postPerPage: postsPerPage,
         },
       });
 
       const { postsPagesByCategoryName } = response.data.postsCategoryInfos;
-      setTotalPages(postsPagesByCategoryName); // Stocke le nombre total de pages dans l'état
+
+      setTotalPages(postsPagesByCategoryName);
     } catch (err) {
       setError("Erreur lors de la récupération des informations de la catégorie.");
+    } finally {
+      setLoadingPagination(false); // Désactive le chargement de la pagination
     }
   };
 
   // Récupération des posts d'une catégorie avec pagination
   const [pageInfo, setPageInfo] = useState({
-    endCursor: null, // initialisation du curseur
-    hasNextPage: false, // indicateur de la présence d'une page suivante
+    endCursor: null,
+    hasNextPage: false,
   });
-  
+
   const fetchPostsForCategory = async (categorySlug: string, page: number) => {
     setLoading(true);
     try {
       const after = page > 1 && pageInfo.endCursor ? pageInfo.endCursor : null;
-        const response = await client.query({
+      const response = await client.query({
         query: LIST_POSTS,
         variables: {
           categoryName: categorySlug,
           first: postsPerPage,
-          after: after, // Passer le curseur pour récupérer les articles suivants
+          after: after,
         },
       });
-  
+
       const fetchedPosts = response.data.posts.nodes;
       const newPageInfo = response.data.posts.pageInfo;
 
-      // Formater les dates `date` et `modified` avec date-fns
-      const formattedPosts = fetchedPosts.map((post: any) => {
-        return {
-          ...post,
-          date: format(new Date(post.date), "dd MMMM yyyy", { locale: fr }), // Format de la date de publication
-          modified: format(new Date(post.modified), "dd MMMM yyyy", { locale: fr }), // Format de la date de modification
-        };
-      });
+      const formattedPosts = fetchedPosts.map((post: any) => ({
+        ...post,
+        date: format(new Date(post.date), "dd MMMM yyyy", { locale: fr }),
+        modified: format(new Date(post.modified), "dd MMMM yyyy", { locale: fr }),
+      }));
 
-      // Remplacer les posts précédents par ceux de la page actuelle
-      //setPosts(fetchedPosts);
-      setPosts(formattedPosts);    
-  
-      // Mettre à jour pageInfo après l'appel API
+      setPosts(formattedPosts);
       setPageInfo(newPageInfo);
-  
     } catch (err) {
-      console.error("Erreur lors de la récupération des posts:", err);
       setError("Erreur lors de la récupération des posts.");
     } finally {
       setLoading(false);
     }
   };
-        
-  // Gestion de la catégorie active
-  const handleCategoryClick = (slug: string, name: string) => {
+
+  // Gestion du changement de catégorie
+  const handleCategoryClick = async (slug: string, name: string) => {
     setActiveCategory(slug);
-    setCurrentPage(1); // Réinitialise la pagination à la première page
-    fetchCategoryInfo(name); // Récupère les informations de pagination à chaque changement de catégorie
-
-    // Met à jour l'image de fond et la légende correspondantes
-    const selectedCategory = categoriesWithImages.find((category) => category.slug === slug);
+    setCurrentPage(1); // Réinitialiser la pagination à la première page
+  
+    const selectedCategory = categories.find((category) => category.slug === slug);
     if (selectedCategory) {
-      setBackgroundImage(selectedCategory.link); // Met à jour l'image de fond
-      setBackgroundImageCaption(selectedCategory.caption); // Met à jour la légende
-    }
+      setPostsPerPage(selectedCategory.postsPerPage || 12);
+      setBackgroundImage(selectedCategory.mediaItemUrl);
+      setBackgroundImageCaption(selectedCategory.caption);
 
+      await fetchCategoryInfo(selectedCategory.name);  // Récupérer la pagination avant de charger les posts
+      fetchPostsForCategory(slug, 1);  // Charger les posts pour la page 1
+    }
   };
 
   // Fonction de gestion de la page
   const handlePageChange = (after: string | null, resetPosts: boolean = false) => {
     if (resetPosts) {
-      // Si `resetPosts` est activé, on réinitialise les posts (par exemple, lors du changement de catégorie ou de retour à la première page)
-      setPosts([]);  // Effacer les posts précédents
-      setCurrentPage(1);  // Réinitialiser à la première page
+      setPosts([]);
+      setCurrentPage(1);
     } else {
-      // Si `after` est défini, on passe à la page suivante
-      setCurrentPage((prevPage) => prevPage + 1);  // Passer à la page suivante
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+
+    const selectedCategory = categories.find((category) => category.slug === activeCategory);
+    if (selectedCategory) {
+      setPostsPerPage(selectedCategory.postsPerPage || 12);
+      fetchCategoryInfo(selectedCategory.name);  // Met à jour la pagination
     }
   };
-    
+
   // Chargement initial
   useEffect(() => {
-    setPostsPerPage(getPostsPerPage());
     fetchSiteInfo();
-    fetchCategoriesWithImages();
+    fetchCategories();
   }, []);
 
-  // Mise à jour des posts lorsque la catégorie active ou la page change
   useEffect(() => {
     if (activeCategory && currentPage) {
       fetchPostsForCategory(activeCategory, currentPage);
     }
-  }, [activeCategory, currentPage]); // Ne pas inclure pageInfo dans les dépendances ici
-    
-  if (loading) {
+  }, [activeCategory, currentPage]);
+
+  // Si des erreurs ou des chargements
+  if (loading || loadingPagination) {
     return <div>Chargement des données...</div>;
   }
 
@@ -214,9 +212,9 @@ function Home() {
         <title>{siteInfo.title}</title>
         {siteInfo.icon && <link rel="icon" href={siteInfo.icon} />}
       </Head>
-      {categoriesWithImages.length > 0 ? (
+      {categories.length > 0 ? (
         <Header
-          categories={categoriesWithImages}
+          categories={categories}
           siteTitle={siteInfo.title}
           siteDescription={siteInfo.description}
           siteIconLink={siteInfo.icon}
@@ -235,9 +233,9 @@ function Home() {
         posts={posts}
         postsPerPage={postsPerPage}
         currentPage={currentPage}
-        pageInfo={pageInfo}  // Passez les informations de pagination
-        totalPages={totalPages} // Passez le nombre total de pages à Body
-        onPageChange={handlePageChange} // Gérer le changement de page
+        pageInfo={pageInfo}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
       <footer className="footer bg-gray-800 text-white text-center p-4">
         <p>© 2024 {siteInfo.title}. Tous droits réservés.</p>
